@@ -306,28 +306,53 @@ export function extractCoveredKeys(pulls, repository = GITHUB_REPOSITORY) {
   return covered;
 }
 
-async function fetchOpenPulls() {
+/**
+ * Dedupe against already-open remediation pulls.
+ *
+ * Every failure mode here degrades to "no dedupe" instead of throwing. Listing
+ * pulls is an optimisation that prevents duplicate PRs; it must never be able to
+ * fail a lint run that has already done its real work. Concretely: a GitHub API
+ * blip, a DNS or proxy failure, an invalid token, or a truncated response all
+ * return the pulls gathered so far. The consequence of skipping dedupe is only
+ * that a second PR may be opened, and the marker inside each PR body is still
+ * compared by the caller for the pulls we did manage to read.
+ *
+ * Exported for testing; the network is stubbed rather than exercised.
+ */
+export async function fetchOpenPulls() {
   if (!GITHUB_TOKEN || !GITHUB_REPOSITORY) return [];
   const pulls = [];
-  for (let page = 1; page <= 10; page += 1) {
-    const url =
-      `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls` +
-      `?state=open&per_page=100&page=${page}`;
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    });
-    if (!response.ok) {
-      console.warn(`Could not list open pulls (HTTP ${response.status}); skipping dedupe.`);
-      return pulls;
+  try {
+    for (let page = 1; page <= 10; page += 1) {
+      const url =
+        `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls` +
+        `?state=open&per_page=100&page=${page}`;
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      if (!response || !response.ok) {
+        const status = response ? `HTTP ${response.status}` : "malformed response";
+        console.warn(`Could not list open pulls (${status}); skipping dedupe.`);
+        return pulls;
+      }
+      let batch;
+      try {
+        batch = await response.json();
+      } catch {
+        console.warn("Could not parse the open-pull response; skipping dedupe.");
+        return pulls;
+      }
+      if (!Array.isArray(batch) || batch.length === 0) break;
+      pulls.push(...batch);
+      if (batch.length < 100) break;
     }
-    const batch = await response.json();
-    if (!Array.isArray(batch) || batch.length === 0) break;
-    pulls.push(...batch);
-    if (batch.length < 100) break;
+  } catch (error) {
+    console.warn(`Could not reach the GitHub API (${error.message}); skipping dedupe.`);
+    return pulls;
   }
   return pulls;
 }
@@ -469,6 +494,11 @@ async function main() {
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
   let files = args.files ?? DEFAULT_FILES;
+  // Positional args narrow the scan. Tracked separately because both the log
+  // line and the prompt's scope sentence must not claim "the whole repository"
+  // when the caller asked for one directory — the model reads that sentence and
+  // would otherwise go looking outside the range it was given.
+  const restricted = args.files !== null;
   let scope = args.scope;
   if (scope === "changed") {
     const baseRef = args.baseRef || process.env.BASE_REF || "origin/main";
@@ -499,7 +529,11 @@ async function main() {
     console.log(`Linting ${files.length} markdown file(s) changed against ${baseRef}.`);
   } else {
     scope = "all";
-    console.log(`Linting ${files.join(", ")} across the repository.`);
+    console.log(
+      restricted
+        ? `Linting ${files.length} requested path pattern(s): ${files.join(", ")}`
+        : `Linting ${files.join(", ")} across the repository.`,
+    );
   }
 
   const before = await runHallmark("lint", files);
@@ -550,7 +584,12 @@ async function main() {
     autoFixedCount,
     surfacedByFix: surfacedByFix.length,
     marker,
-    scope: scope === "changed" ? `markdown changed against ${args.baseRef || "origin/main"}` : "all markdown in the repository",
+    scope:
+      scope === "changed"
+        ? `markdown changed against ${args.baseRef || "origin/main"}`
+        : restricted
+          ? `only the requested path pattern(s): ${files.join(", ")}`
+          : "all markdown in the repository",
     files: [...new Set(uncovered.map((f) => f.file))].sort(),
   });
   const promptPath = path.join(OUTPUT_DIR, "claude-prompt.md");
