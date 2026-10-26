@@ -1,0 +1,51 @@
+name: Finance PushPlus Digest
+
+# 手动抓一次财经站并经 PushPlus 推微信。
+# 先在 Settings -> Secrets and variables -> Actions 配置：
+#   PUSHPLUS_TOKEN（推微信必填）、FIRECRAWL_API_KEY（可选，推荐）
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "只生成简报不推送（true=不推）"
+        type: boolean
+        default: false
+      per_source:
+        description: "每站头条条数"
+        type: string
+        default: "5"
+  # 需要定时时取消注释：北京时间工作日 08:30（UTC 00:30）
+  # schedule:
+  #   - cron: "30 0 * * 1-5"
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Scrape finance sites and push via PushPlus
+        working-directory: examples/finance_pushplus_digest
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          PUSHPLUS_TOPIC: ${{ secrets.PUSHPLUS_TOPIC }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python3 finance_scrape_pushplus.py --dry-run --per-source "${{ inputs.per_source }}"
+          else
+            python3 finance_scrape_pushplus.py --push --per-source "${{ inputs.per_source }}"
+          fi
+      - name: Upload digest artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-digest
+          path: examples/finance_pushplus_digest/output/
+          if-no-files-found: ignore
