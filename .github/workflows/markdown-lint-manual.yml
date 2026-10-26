@@ -1,0 +1,384 @@
+name: Markdown Lint (Manual)
+
+# One button for operating the markdown pipeline by hand.
+#
+# The other two workflows cover the automated paths: markdown-lint.yml gates
+# pull requests and reports on the default branch, and
+# markdown-lint-claude-remediation.yml cleans up the residue on a schedule. But
+# neither is convenient when you just want to answer a question right now —
+# "what is the current state?", "clean up the easy part without spending any
+# model budget", "kick the AI off without waiting for Monday's cron".
+#
+# Three modes, deliberately separate jobs so each carries only the permissions
+# it needs:
+#
+#   report  scan and upload findings. Never fails, changes nothing.
+#   fix     run `hallmark fix` and open a PR with the mechanical diff.
+#           No model is invoked, so this mode costs nothing but CI minutes.
+#   ai      hand off to Markdown Lint AI Remediation. This workflow does NOT
+#           duplicate the model configuration — the DeepSeek endpoint, model
+#           split and tool allowlist live in exactly one place, and delegating
+#           keeps them from drifting.
+#
+# `fix` and `ai` overlap: the AI remediation also applies `hallmark fix` before
+# the model starts. Use `fix` when you want the deterministic 74% now and the
+# judgement calls later; do not open both against the same tree at once.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "report = scan only (never fails); fix = mechanical hallmark fix + PR, no model spend; ai = delegate to the AI remediation workflow"
+        type: choice
+        default: report
+        options:
+          - report
+          - fix
+          - ai
+      paths:
+        description: "Markdown glob to restrict to, e.g. apps/**/*.md — leave blank for the whole repository"
+        type: string
+        default: ""
+      open_pr:
+        description: "fix mode only: open a PR with the mechanical fixes. Off applies them, reports the diff, then discards it"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  # Keep in step with markdown-lint.yml. Pinned for the same reason: a surprise
+  # hallmark bump changes the rule set and would make two runs of this workflow
+  # disagree for reasons nobody edited.
+  HALLMARK_VERSION: "5.0.2"
+
+jobs:
+  report:
+    name: Report markdown lint findings
+    if: ${{ inputs.mode == 'report' }}
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # Read-only PR access so the report can say which findings an in-flight
+      # remediation PR already covers, instead of listing them as new work.
+      pull-requests: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Install hallmark
+        run: |
+          set -euo pipefail
+          npm install --prefix /tmp/hallmark-tool --no-audit --no-fund "hallmark@${HALLMARK_VERSION}"
+          echo "HALLMARK_MODULE=/tmp/hallmark-tool/node_modules/hallmark/index.js" >> "$GITHUB_ENV"
+
+      - name: Scan
+        id: scan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          # Via env, never interpolated into the script: an input string reaching
+          # a `run` block unquoted is how command injection happens. Quoting it
+          # here also keeps the shell from expanding the glob, so hallmark's own
+          # deglob sees the pattern rather than whatever matched on the runner.
+          MD_PATHS: ${{ inputs.paths }}
+        run: |
+          set -euo pipefail
+          if [ -n "$MD_PATHS" ]; then
+            echo "Restricting to: $MD_PATHS"
+            node .github/scripts/hallmark-markdown-scan.mjs --no-fix "$MD_PATHS"
+          else
+            node .github/scripts/hallmark-markdown-scan.mjs --no-fix
+          fi
+
+      - name: Upload findings
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: markdown-lint-report-${{ github.run_id }}
+          path: /tmp/hallmark-markdown/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Summarise
+        if: always()
+        env:
+          MODE_PATHS: ${{ inputs.paths }}
+        run: |
+          {
+            echo "### Markdown lint report"
+            echo ""
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| scope | \`${MODE_PATHS:-**/*.md}\` |"
+            echo "| findings | ${{ steps.scan.outputs.total_findings }} |"
+            echo "| files affected | ${{ steps.scan.outputs.files_with_findings }} |"
+            echo "| needing judgement | ${{ steps.scan.outputs.remaining_findings }} |"
+            echo "| already covered by an open PR | ${{ steps.scan.outputs.covered_findings }} |"
+            echo ""
+            if [ "${{ steps.scan.outputs.total_findings }}" = "0" ]; then
+              echo "Clean — nothing to do."
+            else
+              echo "**Next step:** run this workflow again with \`mode: fix\` to clear the"
+              echo "mechanical findings for free, or \`mode: ai\` to have the model settle"
+              echo "the ones that need a judgement call."
+              echo ""
+              echo "Full detail is in the \`markdown-lint-report-${{ github.run_id }}\` artifact:"
+              echo "\`findings-after.json\` has every finding with file, line, rule and"
+              echo "classification; \`claude-prompt.md\` is what the model would be asked to do."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  fix:
+    name: Apply mechanical fixes
+    if: ${{ inputs.mode == 'fix' }}
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Install hallmark
+        run: |
+          set -euo pipefail
+          npm install --prefix /tmp/hallmark-tool --no-audit --no-fund "hallmark@${HALLMARK_VERSION}"
+          echo "HALLMARK_MODULE=/tmp/hallmark-tool/node_modules/hallmark/index.js" >> "$GITHUB_ENV"
+
+      - name: Run the fixer
+        id: scan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          MD_PATHS: ${{ inputs.paths }}
+        run: |
+          set -euo pipefail
+          if [ -n "$MD_PATHS" ]; then
+            echo "Restricting to: $MD_PATHS"
+            node .github/scripts/hallmark-markdown-scan.mjs --fix "$MD_PATHS"
+          else
+            node .github/scripts/hallmark-markdown-scan.mjs --fix
+          fi
+
+      - name: Open a PR with the mechanical fixes
+        id: pr
+        if: ${{ inputs.open_pr }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MD_PATHS: ${{ inputs.paths }}
+        run: |
+          set -euo pipefail
+
+          # Only markdown is staged. The fixer should not touch anything else,
+          # and scoping the add means an unexpected change elsewhere shows up as
+          # an unstaged diff in the log instead of riding into the PR.
+          #
+          # The changed files are enumerated first and then handed to `git add`
+          # explicitly, because `git add` is the one plumbing command that treats
+          # a pathspec matching nothing as fatal. This repository has no
+          # `.markdown` files at all, so `git add -A -- '*.md' '*.markdown'` dies
+          # with exit 128 ("pathspec '*.markdown' did not match any files") and
+          # the job would fail on every single run. `git diff` and `git ls-files`
+          # both tolerate an unmatched pathspec, so the globs go to them.
+          mapfile -d '' -t MARKDOWN_CHANGES < <(
+            {
+              git diff --name-only -z HEAD -- '*.md' '*.markdown'
+              git ls-files --others --exclude-standard -z -- '*.md' '*.markdown'
+            }
+          )
+          if [ "${#MARKDOWN_CHANGES[@]}" -gt 0 ]; then
+            git add -- "${MARKDOWN_CHANGES[@]}"
+          fi
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The fixer produced no changes for scope '${MD_PATHS:-**/*.md}'."
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          # Captured here, before the commit: `git diff --cached` is empty once
+          # the changes are committed, and the PR body below still needs both the
+          # count and the list.
+          FILES_CHANGED="$(git diff --cached --name-only | wc -l | tr -d ' ')"
+          FILES_LIST="$(git diff --cached --name-only)"
+          echo "files_changed=${FILES_CHANGED}" >> "$GITHUB_OUTPUT"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          BRANCH="chore/md-lint-fix/${GITHUB_RUN_ID}"
+          git switch -c "$BRANCH"
+          # One -m per paragraph rather than a single multi-line string: inside a
+          # YAML block scalar every line must stay indented, and a commit body at
+          # column 0 would terminate the scalar and be parsed as a mapping key.
+          git commit -q \
+            -m "style(markdown): apply hallmark mechanical fixes" \
+            -m "Generated by the 'Markdown Lint (Manual)' workflow, mode=fix. Scope: ${MD_PATHS:-**/*.md}" \
+            -m "\`hallmark fix\` resolved ${{ steps.scan.outputs.auto_fixed }} finding(s); ${{ steps.scan.outputs.remaining_findings }} remain and need a judgement call. Those are handled by the 'Markdown Lint AI Remediation' workflow."
+          git push -q -u origin "$BRANCH"
+
+          # REST rather than `gh pr create`: in this repository the GraphQL path
+          # fails on the deprecated Projects (classic) field, and `gh pr edit`
+          # has been observed exiting 0 while silently doing nothing.
+          BODY_FILE="$(mktemp)"
+          {
+            echo "## Summary"
+            echo ""
+            echo "Mechanical Markdown style fixes from \`hallmark fix\`, opened by the"
+            echo "*Markdown Lint (Manual)* workflow (\`mode: fix\`)."
+            echo ""
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| scope | \`${MD_PATHS:-**/*.md}\` |"
+            echo "| findings before | ${{ steps.scan.outputs.total_findings }} |"
+            echo "| resolved mechanically | ${{ steps.scan.outputs.auto_fixed }} |"
+            echo "| still needing judgement | ${{ steps.scan.outputs.remaining_findings }} |"
+            echo "| files changed | ${FILES_CHANGED} |"
+            echo ""
+            echo "<details>"
+            echo "<summary>The ${FILES_CHANGED} files touched</summary>"
+            echo ""
+            printf '%s\n' "${FILES_LIST}" | sed -e 's/^/- `/' -e 's/$/`/'
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "No model was involved — every change here is deterministic output from"
+            echo "the fixer, so the diff is safe to review as formatting only."
+            echo ""
+            echo "The remaining findings need judgement (moved link targets, non-semver"
+            echo "CHANGELOG headings). Run *Markdown Lint AI Remediation* for those. Note"
+            echo "that it applies these same mechanical fixes first, so merge this before"
+            echo "starting that, or skip this PR and let the AI workflow do both."
+          } > "$BODY_FILE"
+
+          PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls" \
+            -f title="style(markdown): apply hallmark mechanical fixes" \
+            -f head="$BRANCH" \
+            -f base="${GITHUB_REF_NAME}" \
+            -F body=@"$BODY_FILE")"
+          PR_NUMBER="$(printf '%s' "$PR_JSON" | jq -r '.number')"
+          PR_URL="$(printf '%s' "$PR_JSON" | jq -r '.html_url')"
+          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          echo "Opened ${PR_URL}"
+
+          gh label create md-lint-mechanical \
+            --description "Deterministic hallmark fix output, no model involved" \
+            --color "0E8A16" \
+            2>/dev/null || true
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels" \
+            -f "labels[]=md-lint-mechanical" >/dev/null
+
+      - name: Summarise
+        if: always()
+        env:
+          MODE_PATHS: ${{ inputs.paths }}
+        run: |
+          {
+            echo "### Mechanical Markdown fixes"
+            echo ""
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| scope | \`${MODE_PATHS:-**/*.md}\` |"
+            echo "| findings before | ${{ steps.scan.outputs.total_findings }} |"
+            echo "| resolved by the fixer | ${{ steps.scan.outputs.auto_fixed }} |"
+            echo "| surfaced by the fixer | ${{ steps.scan.outputs.surfaced_by_fix }} |"
+            echo "| still needing judgement | ${{ steps.scan.outputs.remaining_findings }} |"
+            echo ""
+            if [ "${{ steps.pr.outputs.pr_url }}" != "" ]; then
+              echo "PR: ${{ steps.pr.outputs.pr_url }}"
+            elif [ "${{ inputs.open_pr }}" = "false" ]; then
+              echo "\`open_pr\` was off, so the fixes were applied, measured and then"
+              echo "discarded with the runner. Nothing was pushed."
+            else
+              echo "No changes to open a PR for."
+            fi
+            echo ""
+            echo "\`surfaced by the fixer\` counts findings that only became violations"
+            echo "*after* the fixer normalised the surrounding markup. The arithmetic"
+            echo "checks out as \`before - resolved + surfaced == remaining\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  ai:
+    name: Hand off to AI remediation
+    if: ${{ inputs.mode == 'ai' }}
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # Needed to dispatch another workflow. This job deliberately holds no
+      # write access to the repository: all editing happens over there.
+      actions: write
+
+    steps:
+      - name: Dispatch the remediation workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Preflight: the remediation job cannot authenticate without this, and
+          # failing here costs nothing, whereas failing over there wastes a full
+          # checkout, an npm install and a `hallmark fix` pass first.
+          #
+          # Listing secrets needs administration:read, which this job does not
+          # have and should not be given just to save a failed run. So the check
+          # blocks only when it can positively see the secret is absent; if the
+          # token cannot read the secret list at all, warn and let the dispatch
+          # proceed — a 403 must not be mistaken for a missing secret.
+          if SECRETS="$(gh secret list --repo "$GITHUB_REPOSITORY" 2>/dev/null)"; then
+            if ! printf '%s' "$SECRETS" | grep -q '^MD_LINT_DEEPSEEK_API_KEY'; then
+              echo "::error::Secret MD_LINT_DEEPSEEK_API_KEY is not set. The remediation job would fail at the model step."
+              echo "Add it with: gh secret set MD_LINT_DEEPSEEK_API_KEY --repo ${GITHUB_REPOSITORY}"
+              exit 1
+            fi
+            echo "MD_LINT_DEEPSEEK_API_KEY is present."
+          else
+            echo "::warning::This token cannot list repository secrets, so the preflight was skipped."
+          fi
+
+          echo "Dispatching 'Markdown Lint AI Remediation' on ${GITHUB_REF_NAME}…"
+          gh workflow run "Markdown Lint AI Remediation" --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
+
+      - name: Report the triggered run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # `gh workflow run` returns no id, so poll briefly for the run it created.
+          for _ in 1 2 3 4 5 6; do
+            RUN_JSON="$(gh run list --repo "$GITHUB_REPOSITORY" \
+              --workflow "Markdown Lint AI Remediation" --limit 1 \
+              --json databaseId,url,status,event 2>/dev/null || true)"
+            if [ -n "$RUN_JSON" ] && [ "$RUN_JSON" != "[]" ]; then
+              RUN_URL="$(printf '%s' "$RUN_JSON" | jq -r '.[0].url')"
+              RUN_STATUS="$(printf '%s' "$RUN_JSON" | jq -r '.[0].status')"
+              {
+                echo "### AI remediation dispatched"
+                echo ""
+                echo "Run: ${RUN_URL} (${RUN_STATUS})"
+                echo ""
+                echo "Watch it with:"
+                echo "\`\`\`bash"
+                echo "gh run watch ${RUN_URL##*/} --repo ${GITHUB_REPOSITORY}"
+                echo "\`\`\`"
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "Triggered ${RUN_URL} (${RUN_STATUS})"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning::Dispatched, but no run appeared within 60s. Check the Actions tab."

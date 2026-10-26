@@ -1,16 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
+// fetchOpenPulls reads the token and repository from the environment at module
+// load time, so they must be set before importing. A dynamic import is used for
+// that reason; the fake token is never sent anywhere because fetch is stubbed.
+process.env.GITHUB_TOKEN = "test-token-never-sent";
+process.env.GITHUB_REPOSITORY = "k-macao/09-firecrawl";
+
+const {
   buildMarker,
   buildPrompt,
   classify,
   extractCoveredKeys,
+  fetchOpenPulls,
   findingKey,
   groupByRule,
   isTrustedCoveragePull,
   normaliseResult,
-} from "./hallmark-markdown-scan.mjs";
+} = await import("./hallmark-markdown-scan.mjs");
+
+/** Run a callback with globalThis.fetch replaced, restoring it afterwards. */
+async function withFetchStub(stub, callback) {
+  const original = globalThis.fetch;
+  globalThis.fetch = stub;
+  try {
+    return await callback();
+  } finally {
+    globalThis.fetch = original;
+  }
+}
 
 const REPO = "firecrawl/firecrawl";
 
@@ -261,4 +279,77 @@ test("an empty residue still produces a usable prompt with an empty marker", () 
 
   assert.match(prompt, /0 finding\(s\) across 0 file\(s\)/);
   assert.ok(prompt.includes("<!-- hallmark-md-keys: [] -->"));
+});
+
+test("fetchOpenPulls survives a network failure instead of failing the scan", async (t) => {
+  // Listing open pulls only prevents duplicate PRs. A GitHub API blip must not
+  // be able to fail a lint run that has already done its work.
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (message) => warnings.push(String(message));
+  try {
+    const result = await withFetchStub(
+      () => {
+        throw new TypeError("fetch failed");
+      },
+      () => fetchOpenPulls(),
+    );
+    t.assert.deepEqual(result, []);
+    t.assert.ok(
+      warnings.some((line) => line.includes("skipping dedupe")),
+      `expected a dedupe warning, got ${JSON.stringify(warnings)}`,
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test("fetchOpenPulls tolerates an HTTP error and a malformed body", async (t) => {
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    const httpError = await withFetchStub(
+      async () => ({ ok: false, status: 503 }),
+      () => fetchOpenPulls(),
+    );
+    t.assert.deepEqual(httpError, []);
+
+    const badJson = await withFetchStub(
+      async () => ({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new SyntaxError("Unexpected end of JSON input");
+        },
+      }),
+      () => fetchOpenPulls(),
+    );
+    t.assert.deepEqual(badJson, []);
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test("fetchOpenPulls keeps the pulls it read before a later page failed", async (t) => {
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    let call = 0;
+    const partial = await withFetchStub(async () => {
+      call += 1;
+      if (call === 1) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () =>
+            Array.from({ length: 100 }, (_, index) => ({ number: index + 1, body: "" })),
+        };
+      }
+      throw new TypeError("fetch failed");
+    }, () => fetchOpenPulls());
+    // Page one was read successfully, so its pulls remain usable for dedupe.
+    t.assert.equal(partial.length, 100);
+  } finally {
+    console.warn = originalWarn;
+  }
 });
