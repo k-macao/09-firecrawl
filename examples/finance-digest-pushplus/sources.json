@@ -1,0 +1,240 @@
+{
+  "$comment": "财经类抓取源清单，对应『Firecrawl 在财经与金融领域的应用』一文的三大类站点。字段说明见 README.md。enabled=false 的源为已知的付费墙/强反爬站点，仅作占位与文档用途。",
+  "categories": [
+    {
+      "id": "news",
+      "name": "财经新闻与主流科技/商业媒体",
+      "sources": [
+        {
+          "id": "wallstreetcn-live",
+          "name": "华尔街见闻 · 7x24 快讯",
+          "url": "https://wallstreetcn.com/live/global",
+          "enabled": true,
+          "scenario": "抓取快讯、深度资讯、市场实时点评",
+          "note": "SPA 站点，正文由 JS 渲染；必须 wait_for + 滚动，否则只拿到『正在加载』骨架。",
+          "wait_for": 4000,
+          "timeout": 90000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "block_ads": true,
+          "actions": [
+            { "type": "wait", "milliseconds": 2500 },
+            { "type": "scroll", "direction": "down", "selector": "body" },
+            { "type": "wait", "milliseconds": 1500 },
+            { "type": "scroll", "direction": "down", "selector": "body" },
+            { "type": "wait", "milliseconds": 1500 }
+          ],
+          "limit": 20
+        },
+        {
+          "id": "wallstreetcn-news",
+          "name": "华尔街见闻 · 深度资讯",
+          "url": "https://wallstreetcn.com/news/global",
+          "enabled": true,
+          "scenario": "深度文章列表，右侧推荐/广告可被 only_main_content 干净剥离",
+          "wait_for": 4000,
+          "timeout": 90000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "block_ads": true,
+          "actions": [
+            { "type": "wait", "milliseconds": 2500 },
+            { "type": "scroll", "direction": "down", "selector": "body" },
+            { "type": "wait", "milliseconds": 1500 }
+          ],
+          "limit": 15
+        },
+        {
+          "id": "yicai-news",
+          "name": "第一财经 · 新闻",
+          "url": "https://www.yicai.com/news/",
+          "enabled": true,
+          "scenario": "公开商业报道、宏观分析、A 股/金融/产经",
+          "note": "服务端渲染，抓取稳定，无需 actions。",
+          "wait_for": 1500,
+          "timeout": 60000,
+          "proxy": "basic",
+          "only_main_content": true,
+          "block_ads": true,
+          "limit": 20
+        },
+        {
+          "id": "jiemian-finance",
+          "name": "界面新闻 · 财经",
+          "url": "https://www.jiemian.com/lists/60.html",
+          "enabled": true,
+          "scenario": "公开商业报道",
+          "wait_for": 2000,
+          "timeout": 60000,
+          "proxy": "basic",
+          "only_main_content": true,
+          "limit": 15
+        },
+        {
+          "id": "21jingji",
+          "name": "21 世纪经济报道",
+          "url": "https://www.21jingji.com/",
+          "enabled": true,
+          "scenario": "宏观与政策解读",
+          "note": "频道页路径经常变动（/channel/latestnews 已 404），建议抓首页。",
+          "wait_for": 2500,
+          "timeout": 60000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "limit": 15
+        },
+        {
+          "id": "caixin",
+          "name": "财新网（公开页）",
+          "url": "https://www.caixin.com/",
+          "enabled": false,
+          "scenario": "公开的商业报道、深度宏观分析",
+          "note": "⚠️ 付费墙：未登录 Cookie 时 Firecrawl 只能取到开头免费预览段落。默认关闭，避免浪费额度。",
+          "wait_for": 2000,
+          "timeout": 60000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "limit": 10
+        },
+        {
+          "id": "reuters-markets",
+          "name": "Reuters · Markets",
+          "url": "https://www.reuters.com/markets/",
+          "enabled": true,
+          "scenario": "全球宏观经济资讯、外汇/大宗商品新闻",
+          "note": "动态加载 + 软注册墙，需 JS 渲染；英文 Markdown 输出质量高。",
+          "wait_for": 3500,
+          "timeout": 90000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "block_ads": true,
+          "location": { "country": "US", "languages": ["en-US"] },
+          "actions": [
+            { "type": "wait", "milliseconds": 2000 },
+            { "type": "scroll", "direction": "down", "selector": "body" },
+            { "type": "wait", "milliseconds": 1500 }
+          ],
+          "limit": 15
+        },
+        {
+          "id": "cnbc-world",
+          "name": "CNBC · World Markets",
+          "url": "https://www.cnbc.com/world-markets/",
+          "enabled": true,
+          "scenario": "全球宏观、外汇/大宗商品",
+          "note": "⚠️ 强 Cloudflare；直连偶发 5xx，proxy 建议 auto/stealth。",
+          "wait_for": 3500,
+          "timeout": 90000,
+          "proxy": "stealth",
+          "only_main_content": true,
+          "block_ads": true,
+          "location": { "country": "US", "languages": ["en-US"] },
+          "limit": 15
+        },
+        {
+          "id": "bloomberg-markets",
+          "name": "Bloomberg · Markets",
+          "url": "https://www.bloomberg.com/markets",
+          "enabled": false,
+          "scenario": "全球宏观经济资讯",
+          "note": "⚠️ 付费墙 + 强反爬，公开页仅能取到少量预览。默认关闭。",
+          "wait_for": 3500,
+          "timeout": 90000,
+          "proxy": "stealth",
+          "only_main_content": true,
+          "limit": 10
+        }
+      ]
+    },
+    {
+      "id": "filings",
+      "name": "企业财报、研报与公告平台",
+      "sources": [
+        {
+          "id": "cninfo-notice",
+          "name": "巨潮资讯网 · 最新公告",
+          "url": "https://www.cninfo.com.cn/new/index",
+          "enabled": true,
+          "scenario": "上市公司公告、定期报告；表格可完整转成 Markdown Table",
+          "note": "公告列表为 HTML <table>，Firecrawl 直接产出 Markdown 表格，代码/简称/标题/日期四列齐全。",
+          "wait_for": 3000,
+          "timeout": 90000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "limit": 25
+        },
+        {
+          "id": "sec-edgar-10q",
+          "name": "SEC EDGAR · Latest 10-Q",
+          "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=10-Q&count=40",
+          "enabled": true,
+          "scenario": "10-K/10-Q 季报索引，取公司名 + CIK + Accession Number",
+          "note": "静态 HTML，最稳定的源之一。拿到 index 页后可再用 scrape 抓正文财报并 extract 财务指标。",
+          "wait_for": 0,
+          "timeout": 45000,
+          "proxy": "basic",
+          "only_main_content": true,
+          "location": { "country": "US", "languages": ["en-US"] },
+          "limit": 20
+        },
+        {
+          "id": "mbhj",
+          "name": "迈博汇金 · 研报",
+          "url": "https://www.mbhj.com/",
+          "enabled": false,
+          "scenario": "行业趋势分析、个股研究报告",
+          "note": "研报下载多需登录；仅网页版展示页可抓。默认关闭。",
+          "wait_for": 3000,
+          "timeout": 90000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "limit": 15
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "name": "财经博客、独立分析与知识社区",
+      "sources": [
+        {
+          "id": "xueqiu-today",
+          "name": "雪球 · 今日话题",
+          "url": "https://xueqiu.com/today",
+          "enabled": true,
+          "scenario": "大 V 长文分析、专栏文章，避开页面复杂布局",
+          "note": "首页有 JS 渲染与 cookie 校验，需 wait_for + 滚动；单篇文章页 (xueqiu.com/{uid}/{postid}) 抓取成功率更高。",
+          "wait_for": 4000,
+          "timeout": 90000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "block_ads": true,
+          "actions": [
+            { "type": "wait", "milliseconds": 2500 },
+            { "type": "scroll", "direction": "down", "selector": "body" },
+            { "type": "wait", "milliseconds": 1500 },
+            { "type": "scroll", "direction": "down", "selector": "body" },
+            { "type": "wait", "milliseconds": 1500 }
+          ],
+          "limit": 15
+        },
+        {
+          "id": "seekingalpha-market-news",
+          "name": "Seeking Alpha · Market News",
+          "url": "https://seekingalpha.com/market-news",
+          "enabled": true,
+          "scenario": "美股深度分析",
+          "note": "⚠️ 部分深度文有高强度付费墙；news 列表页公开可读。",
+          "wait_for": 3500,
+          "timeout": 90000,
+          "proxy": "auto",
+          "only_main_content": true,
+          "block_ads": true,
+          "location": { "country": "US", "languages": ["en-US"] },
+          "limit": 15
+        }
+      ]
+    }
+  ],
+  "extract_prompt_zh": "这是一个财经资讯/公告列表页。请抽取页面中每一条独立的新闻快讯、公告或帖子，输出为 items 数组。要求：\n1. title 用原文标题（快讯若无独立标题，用正文首句概括，不超过 40 字）；\n2. url 必须是绝对链接，优先使用条目自身的详情页链接，没有则留空字符串；\n3. published_at 用页面显示的时间原文（如『5分钟前』『1小时前』『10-27』『2026-10-23』），无法判断则留空字符串；\n4. summary 用一句话概括正文要点，中文源保持中文，英文源保持英文，不超过 120 字；\n5. company_name / stock_code 只在条目明确提到某家上市公司时填写，stock_code 保留交易所前缀（如 SH600900、SZ002466、688116）；\n6. key_metrics 只收录正文中明确出现的财务或市场数字，键用英文（revenue / net_profit / yoy / eps / price / change_pct / volume 等），值保留原文单位（如 '29.97亿元'、'-51.72%'、'4,014.33USD'）；没有则为空对象；\n7. 严禁编造页面上不存在的数字或标题；导航、广告、页脚、二维码、登录提示一律忽略；\n8. 最多返回 {limit} 条，按页面原始顺序。",
+  "extract_prompt_en": "This is a financial news or filings index page. Extract every distinct news item, announcement, or filing into the items array. Rules:\n1. title: the original headline, verbatim.\n2. url: absolute link to the item's own detail page; empty string if absent.\n3. published_at: the timestamp exactly as shown on the page.\n4. summary: one sentence, max 240 characters, same language as the source.\n5. company_name / stock_code: fill only when the item clearly names a listed company; keep exchange prefixes and CIK numbers as printed.\n6. key_metrics: only numbers that literally appear in the text. Keys in English snake_case (revenue, net_profit, yoy, eps, price, change_pct, volume). Values keep original units.\n7. Never invent figures or headlines. Ignore navigation, ads, footers, sign-in prompts and newsletters.\n8. Return at most {limit} items in page order."
+}
