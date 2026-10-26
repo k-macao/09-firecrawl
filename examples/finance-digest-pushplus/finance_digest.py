@@ -118,6 +118,9 @@ class SourceSpec:
     actions: Optional[List[Dict[str, Any]]] = None
     location: Optional[Dict[str, Any]] = None
     limit: int = 15
+    # 抽取 prompt 的语言。留空则按域名自动判断；
+    # 但有些站会跨语言重定向（如 caixin.com → caixinglobal.com），这时必须显式指定。
+    language: Optional[str] = None
 
     @classmethod
     def from_dict(cls, raw: Dict[str, Any], category: str, category_name: str) -> "SourceSpec":
@@ -261,11 +264,28 @@ def load_sources(path: Path, include_disabled: bool = False) -> tuple[List[Sourc
     return specs, prompts
 
 
+ENGLISH_HOSTS = (
+    "reuters.com",
+    "cnbc.com",
+    "bloomberg.com",
+    "sec.gov",
+    "seekingalpha.com",
+    "ft.com",
+    "wsj.com",
+    "caixinglobal.com",
+)
+
+
 def pick_prompt(prompts: Dict[str, str], spec: SourceSpec) -> str:
-    """中文源用中文 prompt，英文源用英文 prompt —— 抽取质量差别很明显。"""
-    host = re.sub(r"^https?://", "", spec.url).split("/")[0].lower()
-    english_hosts = ("reuters.com", "cnbc.com", "bloomberg.com", "sec.gov", "seekingalpha.com", "ft.com", "wsj.com")
-    key = "en" if any(host.endswith(h) for h in english_hosts) else "zh"
+    """中文源用中文 prompt，英文源用英文 prompt —— 混用语言会明显掉抽取质量。
+
+    优先看 spec.language 显式指定；否则按域名判断。域名判断会漏掉跨语言重定向的站
+    （caixin.com 实测 302 到英文的 caixinglobal.com），那种情况请在 sources.json 里写死 language。
+    """
+    key = spec.language
+    if key not in ("zh", "en"):
+        host = re.sub(r"^https?://", "", spec.url).split("/")[0].lower()
+        key = "en" if any(host.endswith(h) for h in ENGLISH_HOSTS) else "zh"
     return (prompts.get(key) or prompts.get("zh") or "").replace("{limit}", str(spec.limit))
 
 
@@ -815,7 +835,11 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     )
     p.add_argument("--sources", default=str(SOURCES_PATH), help="源清单 JSON 路径")
     p.add_argument("--only", default="", help="只抓这些源 id，逗号分隔")
-    p.add_argument("--include-disabled", action="store_true", help="连 enabled=false 的付费墙源一起抓")
+    p.add_argument(
+        "--include-disabled",
+        action="store_true",
+        help="连 sources.json 里 enabled=false 的源一起抓（当前 14 个源全部启用，此开关暂无作用）",
+    )
     p.add_argument("--dry-run", action="store_true", help="只抓取+落盘，不推微信")
     p.add_argument("--from-json", default="", help="不抓取，直接用已落盘的 digest JSON 渲染并推送")
     p.add_argument("--no-push", action="store_true", help="同 --dry-run")

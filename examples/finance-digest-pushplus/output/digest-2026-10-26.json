@@ -4,9 +4,9 @@
   "firecrawl_api_url": "https://api.firecrawl.dev",
   "collector": "手工抓取（Arena fetch_page；本沙箱无法访问 api.firecrawl.dev）",
   "stats": {
-    "sources_ok": 6,
-    "sources_failed": 4,
-    "total_items": 61
+    "sources_ok": 8,
+    "sources_failed": 6,
+    "total_items": 88
   },
   "sources": [
     {
@@ -300,6 +300,22 @@
       ]
     },
     {
+      "id": "jiemian-finance",
+      "name": "界面新闻 · 财经",
+      "url": "https://www.jiemian.com/lists/60.html",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": false,
+      "error": "本次手工抓取未覆盖（沙箱出网白名单未放行该域名）",
+      "status_code": null,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "",
+      "note": "sources.json 里已 enabled。用 Firecrawl 跑时会正常抓取；本次因沙箱网络限制未覆盖，不编造内容占位。",
+      "items": []
+    },
+    {
       "id": "21jingji",
       "name": "21 世纪经济报道",
       "url": "https://www.21jingji.com/",
@@ -314,6 +330,146 @@
       "fetched_url": "https://www.21jingji.com/channel/latestnews",
       "note": "财经站的栏目路径经常改版。生产上应先用 Firecrawl 的 /map 或 /crawl 发现当前有效路径，再把稳定 URL 写回 sources.json，不要硬编码频道页。",
       "items": []
+    },
+    {
+      "id": "caixin",
+      "name": "财新网（公开页）",
+      "url": "https://www.caixin.com/",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.caixinglobal.com/",
+      "note": "实测：请求 www.caixin.com 被 302 重定向到英文站 caixinglobal.com。首页 TOP STORIES / INSIGHT / LATEST NEWS 的标题 + 摘要段（dek）+ 详情页深链全部公开可读，付费墙锁的是正文。结论印证文中『没有登录 Cookie 只能抓取到开头免费的预览段落』——但列表页信息量已经够做摘要。若要中文财新正文，需带登录 Cookie（Firecrawl 的 headers 选项）。",
+      "items": [
+        {
+          "title": "U.S. Proposes Expanding China Investment Controls to Biotech",
+          "url": "https://www.caixinglobal.com/2026-10-26/us-proposes-expanding-china-investment-controls-to-biotech-102497316.html",
+          "published_at": "2026-10-26",
+          "summary": "Treasury's plan could subject joint drug-development ventures, offshore spinoffs and equity investments to national-security review, while generally leaving traditional licensing deals outside its scope.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Coal Falls Below Half of China's Power Output for First Time",
+          "url": "https://www.caixinglobal.com/2026-10-26/coal-falls-below-half-of-chinas-power-output-for-first-time-102497427.html",
+          "published_at": "2026-10-26",
+          "summary": "Coal's share of electricity generation dropped to 49.7% in H1 2026 as renewable energy expanded, the environment ministry said.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "coal_share_h1_2026": "49.7%"
+          }
+        },
+        {
+          "title": "China's First Regional Power Market Begins Full Operation",
+          "url": "https://www.caixinglobal.com/2026-10-26/chinas-first-regional-power-market-begins-full-operation-102497300.html",
+          "published_at": "2026-10-26",
+          "summary": "The mechanism breaks down provincial barriers across five southern regions, creating a pricing hub to optimize power allocation and absorb record levels of renewable generation.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "regions_covered": "5"
+          }
+        },
+        {
+          "title": "China Proposes Easing Borrowing Rules for Foreign-Invested Firms",
+          "url": "https://www.caixinglobal.com/2026-10-26/china-proposes-easing-borrowing-rules-for-foreign-invested-firms-102497441.html",
+          "published_at": "2026-10-26",
+          "summary": "Draft would free up cross-border financing capacity for eligible companies and green projects.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Chinese Chip Billionaire Arrested as Graft Probe Widens",
+          "url": "https://www.caixinglobal.com/2026-10-26/chinese-chip-billionaire-arrested-as-graft-probe-widens-102497557.html",
+          "published_at": "Oct 26, 2026 07:11 PM",
+          "summary": "Lin Xiucheng's arrest follows a probe into former Chongqing Mayor Hu Henghua, who backed Lin's major semiconductor projects.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Apple's Debut Foldable Suffers Hardware and Software Glitches",
+          "url": "https://www.caixinglobal.com/2026-10-26/apples-debut-foldable-suffers-hardware-and-software-glitches-102497546.html",
+          "published_at": "2026-10-26",
+          "summary": "Broken hinges and app incompatibility cast a shadow over the iPhone Duo, which the company hails as the most transformative iPhone in years.",
+          "company_name": "Apple",
+          "stock_code": "AAPL",
+          "key_metrics": {}
+        },
+        {
+          "title": "Cover Story: How a High School Protest Sparked France's Autumn of Fury",
+          "url": "https://www.caixinglobal.com/2026-10-26/cover-story-how-a-high-school-protest-sparked-frances-autumn-of-fury-102497202.html",
+          "published_at": "2026-10-26",
+          "summary": "What began as a demand for better schools has become a nationwide confrontation over spending cuts and living standards, deepening France's political divide as Macron's presidency nears its end.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Weekend Long Read: A Weaker Trump May be a Louder Trump, Zoellick Says",
+          "url": "https://www.caixinglobal.com/2026-10-24/weekend-long-read-a-weaker-trump-may-be-a-louder-trump-zoellick-says-102496700.html",
+          "published_at": "2026-10-24",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "In Depth: China's Offshore Trust Tax Grace Period Ends as Questions Linger",
+          "url": "https://www.caixinglobal.com/2026-10-23/in-depth-chinas-offshore-trust-tax-grace-period-ends-as-questions-linger-102496220.html",
+          "published_at": "2026-10-23",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Analysis: What China's Economic Statistics Are Missing",
+          "url": "https://www.caixinglobal.com/2026-10-23/analysis-what-chinas-economic-statistics-are-missing-102496381.html",
+          "published_at": "2026-10-23",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Caixin Explains: What China's Proposed Shift to an Overnight Policy Rate Would Mean",
+          "url": "https://www.caixinglobal.com/2026-10-21/caixin-explains-what-chinas-proposed-shift-to-an-overnight-policy-rate-would-mean-102495438.html",
+          "published_at": "2026-10-21",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Cover Story: China's Power Retailers Reel as Cheap Deals Backfire",
+          "url": "https://www.caixinglobal.com/2026-10-19/cover-story-chinas-power-retailers-reel-as-cheap-deals-backfire-102494733.html",
+          "published_at": "2026-10-19",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "China Targets 3.5 Trillion Yuan Pharmaceutical Industry by 2030",
+          "url": "https://www.caixinglobal.com/2026-09-18/china-targets-35-trillion-yuan-pharmaceutical-industry-by-2030-102486229.html",
+          "published_at": "2026-09-18",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "pharma_industry_target_2030": "3.5万亿元"
+          }
+        }
+      ]
     },
     {
       "id": "reuters-markets",
@@ -460,6 +616,161 @@
       "fetched_url": "https://www.cnbc.com/world-markets/",
       "note": "对应文中『带强 Cloudflare 防火墙的平台』一类。Firecrawl 侧应把 proxy 升到 stealth 并加大 wait_for；脚本内置的 proxy 逐级升档重试（basic→auto→stealth）就是为这种情况准备的。",
       "items": []
+    },
+    {
+      "id": "bloomberg-markets",
+      "name": "Bloomberg · Markets",
+      "url": "https://www.bloomberg.com/markets",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.bloomberg.com/markets",
+      "note": "实测：/markets 这个 hub 页公开可读，没有撞墙——Top Securities 行情条（S&P 500 / Nasdaq / B500 / US 10 Yr / Crude / FTSE 100 / Gold / Euro / Pound）和十几条带深链的头条都完整取到，只有 Markets Daily newsletter 区块标着 Subscriber Only。结论：抓 hub 页性价比高，点进单篇深度文才会撞付费墙。",
+      "items": [
+        {
+          "title": "Top Securities snapshot: S&P 500 7,623.68 (-0.52%), Nasdaq 25,955.34 (-0.21%)",
+          "url": "https://www.bloomberg.com/quote/SPX:IND",
+          "published_at": "",
+          "summary": "B500 2,758.38 (-0.50%) · US 10 Yr 4.99 (0.00%) · Crude Oil 101.05 (-2.15%) · FTSE 100 10,736.79 (+0.43%) · Gold 4,025.40 (+0.44%) · Euro 1.12 (-0.06%) · Pound/Dollar 1.33 (-0.19%)",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "SPX:IND": "7,623.68 (-0.52%)",
+            "CCMP:IND": "25,955.34 (-0.21%)",
+            "B500:IND": "2,758.38 (-0.50%)",
+            "US_10Yr": "4.99 (0.00%)",
+            "CL1:COM_crude": "101.05 (-2.15%)",
+            "UKX:IND_FTSE100": "10,736.79 (+0.43%)",
+            "GC1:COM_gold": "4,025.40 (+0.44%)",
+            "EURUSD:CUR": "1.12 (-0.06%)",
+            "GBPUSD:CUR": "1.33 (-0.19%)"
+          }
+        },
+        {
+          "title": "Markets Wrap: Stocks Gain Before Tech Earnings as Oil Declines",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-25/us-equity-futures-climb-as-crude-oil-price-dips-markets-wrap",
+          "published_at": "2026-10-25",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Genmab Soars as Cancer Drug Impresses in a Late-Stage Trial",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/genmab-soars-as-cancer-drug-impresses-in-a-late-stage-trial",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "Genmab",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "AI Agents Seen Taking Credit-Trading Work From Humans Over Time",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/ai-agents-seen-taking-credit-trading-work-from-humans-over-time",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "CoreWeave Rout Sends Warning Sign to Rest of the Stock Market",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/coreweave-rout-sends-warning-sign-to-rest-of-the-stock-market",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "CoreWeave",
+          "stock_code": "CRWV:US",
+          "key_metrics": {}
+        },
+        {
+          "title": "French Bond Risk Gauge Falls as Moody's Keeps Rating Stable",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/french-markets-rebound-after-nation-avoids-moody-s-downgrade",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "India Opposition Leader Gandhi Acquitted in Defamation Case",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/india-s-opposition-leader-gandhi-acquitted-in-defamation-case",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "UK Dealers See More Treasury Bills Coming to Cut Debt Costs",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/uk-dealers-see-more-treasury-bills-coming-to-cut-debt-costs",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "French Bond Rout Draws Australia Pension Into Market Others Shun",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/french-bond-oats-australia-pension-australian-retirement-trust-yields-ecb",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Citadel Securities Takes Bigger Office in India Push",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/ken-griffin-s-citadel-securities-to-expand-india-office",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "Citadel Securities",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Uganda Shilling Hits Record Low Even as Central Bank Steps In",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/-usd-ugx-shilling-freefall-has-uganda-tapping-meager-reserve-war-chest",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Musk Claims $40 Billion Chips Debt Closed, Yet Talks Ongoing",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-25/musk-says-spacex-closed-40-billion-debt-deal-blasts-neoclouds",
+          "published_at": "2026-10-25",
+          "summary": "Most Active 板块条目",
+          "company_name": "SpaceX",
+          "stock_code": "SPCX:US",
+          "key_metrics": {
+            "chips_debt": "$40 Billion"
+          }
+        },
+        {
+          "title": "Netflix Users Are Watching Less, Not Opening the App as Often",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-25/netflix-users-are-watching-less-not-opening-the-app-as-often",
+          "published_at": "2026-10-25",
+          "summary": "Most Active 板块条目",
+          "company_name": "Netflix",
+          "stock_code": "NFLX:US",
+          "key_metrics": {}
+        },
+        {
+          "title": "The Big Take: Affordability Is Splintering the Voter Coalition Trump Built",
+          "url": "https://www.bloomberg.com/features/2026-us-midterm-election-affordability/",
+          "published_at": "2026-10-26",
+          "summary": "Two years later, some of his supporters are disappointed — and that's bad news for Republicans.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        }
+      ]
     },
     {
       "id": "cninfo-notice",
@@ -688,6 +999,22 @@
           }
         }
       ]
+    },
+    {
+      "id": "mbhj",
+      "name": "迈博汇金 · 研报",
+      "url": "https://www.mbhj.com/",
+      "category": "filings",
+      "category_name": "二、企业财报、研报与公告平台",
+      "ok": false,
+      "error": "ERR_BLOCKED_BY_CLIENT：www.mbhj.com 无法建立连接，返回的页面标题只剩占位符 mbhj.com，正文是浏览器扩展拦截提示",
+      "status_code": null,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.mbhj.com/",
+      "note": "实测该域名已不可达。这正好是文中『各大券商公开研报展示页』一类的现实风险：研报聚合站域名极不稳定，且研报下载本来多需登录。生产上应改用各券商官网的公开研报展示页，并先用 Firecrawl /map 确认路径，不要把聚合站域名硬编码进定时任务。",
+      "items": []
     },
     {
       "id": "xueqiu-today",

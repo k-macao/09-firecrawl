@@ -116,12 +116,14 @@ print("\n[1] sources.json 解析")
 specs, prompts = load_sources(SOURCES_PATH)
 ids = [s.id for s in specs]
 check("enabled 源被加载", len(specs) >= 8, f"实际 {len(specs)}")
-check("付费墙源默认排除", "caixin" not in ids and "bloomberg-markets" not in ids, str(ids))
+check("付费墙源默认启用（用户要求一起试）",
+      {"caixin", "bloomberg-markets", "mbhj"} <= set(ids), str(ids))
 all_specs, _ = load_sources(SOURCES_PATH, include_disabled=True)
-check("--include-disabled 能捞回付费墙源",
-      {"caixin", "bloomberg-markets", "mbhj"} <= {s.id for s in all_specs})
+check("include_disabled 不会重复加载已启用的源", len(all_specs) == len(specs),
+      f"{len(all_specs)} vs {len(specs)}")
 check("三大分类齐全",
       {s.category for s in specs} == {"news", "filings", "community"}, str({s.category for s in specs}))
+check("源 id 唯一", len(set(ids)) == len(ids))
 check("每个源都有 url/name/id", all(s.url and s.name and s.id for s in specs))
 check("中英文 prompt 都非空且含 {limit} 占位",
       bool(prompts["zh"]) and bool(prompts["en"])
@@ -137,6 +139,17 @@ check("SEC EDGAR → 英文 prompt", pick_prompt(prompts, by_id["sec-edgar-10q"]
 check("Seeking Alpha → 英文 prompt", pick_prompt(prompts, by_id["seekingalpha-market-news"]).startswith("This is a financial"))
 check("雪球 → 中文 prompt", pick_prompt(prompts, by_id["xueqiu-today"]).startswith("这是一个财经资讯"))
 check("{limit} 已被替换成真实数字", "{limit}" not in pick_prompt(prompts, by_id["yicai-news"]))
+# caixin.com 实测 302 到英文站 caixinglobal.com，光按域名判断会用错语言的 prompt
+check("财新 language=en 覆盖了域名判断",
+      by_id["caixin"].language == "en"
+      and pick_prompt(prompts, by_id["caixin"]).startswith("This is a financial"))
+check("Bloomberg → 英文 prompt",
+      pick_prompt(prompts, by_id["bloomberg-markets"]).startswith("This is a financial"))
+check("迈博汇金 → 中文 prompt",
+      pick_prompt(prompts, by_id["mbhj"]).startswith("这是一个财经资讯"))
+_fallback = SourceSpec(id="x", name="x", url="https://caixinglobal.com/", category="news",
+                       category_name="news")
+check("caixinglobal.com 域名本身也走英文", pick_prompt(prompts, _fallback).startswith("This is a financial"))
 
 print("\n[3] Digest JSON 往返")
 d = _sample_digest()

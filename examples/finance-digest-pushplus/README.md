@@ -32,21 +32,20 @@ python finance_digest.py               # ③ 确认没问题，正式推送
 
 ## 抓取源
 
-源清单在 [`sources.json`](./sources.json)，按原文分成三类：
+源清单在 [`sources.json`](./sources.json)，按原文分成三类，**14 个源默认全部启用**（含付费墙的财新 / Bloomberg / 迈博汇金）：
 
-| 分类 | 源 | 默认 |
-| --- | --- | --- |
-| **一、财经新闻与主流媒体** | 华尔街见闻（7x24 快讯 / 深度资讯）、第一财经、界面新闻、21 世纪经济报道、Reuters Markets、CNBC World Markets | ✅ |
-| | 财新网、Bloomberg | ❌ 付费墙 |
-| **二、财报、研报与公告** | 巨潮资讯网（最新公告）、SEC EDGAR（Latest 10-Q） | ✅ |
-| | 迈博汇金 | ❌ 需登录 |
-| **三、博客、独立分析与社区** | 雪球（今日话题）、Seeking Alpha（Market News） | ✅ |
+| 分类 | 源 |
+| --- | --- |
+| **一、财经新闻与主流媒体**（9） | 华尔街见闻（7x24 快讯 / 深度资讯）、第一财经、界面新闻、21 世纪经济报道、财新网、Reuters Markets、CNBC World Markets、Bloomberg Markets |
+| **二、财报、研报与公告**（3） | 巨潮资讯网（最新公告）、SEC EDGAR（Latest 10-Q）、迈博汇金 |
+| **三、博客、独立分析与社区**（2） | 雪球（今日话题）、Seeking Alpha（Market News） |
 
-付费墙源默认 `enabled: false`，避免白烧额度；想试就加 `--include-disabled`，或只抓单个源：
+付费墙源也开着——它们能抓到多少免费内容，`sources.json` 里每个源的 `note` 字段写了实测结论，
+下面「财经抓取的边界」一节也有汇总。想临时关掉某个源就改 `enabled`，或只抓指定几个：
 
 ```bash
-python finance_digest.py --only caixin --include-disabled --dry-run
 python finance_digest.py --only wallstreetcn-live,yicai-news
+python finance_digest.py --only caixin,bloomberg-markets --dry-run
 ```
 
 ### 每个源的抓取参数怎么定
@@ -155,13 +154,35 @@ python finance_digest.py --from-json output/digest-2026-10-26.json --title "财�
 - **别硬编码频道页路径。** 21 世纪经济报道的 `/channel/latestnews` 已经 404。财经站改版频繁，
   生产上应先用 Firecrawl 的 `/map` 或 `/crawl` 发现当前有效路径，再把稳定 URL 写回 `sources.json`。
 - **强 Cloudflare 会直接 5xx。** CNBC `/world-markets/` 本次返回 HTTP 500，需要把 `proxy` 升到 `stealth`。
-- **付费墙就是付费墙。** WSJ / FT / 财新深度文在没有登录 Cookie 时只能取到开头免费预览段，
-  所以这几个源默认关掉。
+- **付费墙≠什么都抓不到，要看锁在哪一层。** 本次实测三个付费墙源：
+  - **财新**：请求 `www.caixin.com` 会 302 到英文站 `caixinglobal.com`，首页 TOP STORIES / INSIGHT /
+    LATEST NEWS 的**标题 + 摘要段（dek）+ 详情深链全部公开可读**（拿到 13 条），墙锁的是正文。
+    结论：列表页够做摘要；要中文财新正文得带登录 Cookie（Firecrawl 的 `headers` 选项）。
+    ⚠️ 因为发生了跨语言重定向，这个源在 `sources.json` 里必须显式写 `"language": "en"`，
+    否则按域名判断会套用中文 prompt，抽取质量明显下降。
+  - **Bloomberg**：`/markets` 这个 **hub 页公开可读**（拿到 14 条）——Top Securities 行情条
+    （SPX/CCMP/B500/US10Y/Crude/FTSE/Gold/EURUSD/GBPUSD）和十几条带深链的头条都完整取到，
+    只有 Markets Daily newsletter 区块标着 `Subscriber Only`。抓 hub 页性价比高，点进单篇深度文才会撞墙。
+  - **迈博汇金**：`www.mbhj.com` 直接 `ERR_BLOCKED_BY_CLIENT`，域名已失效或被拦截。
+    这暴露了研报聚合站的现实风险：**域名极不稳定**，不要把聚合站硬编码进定时任务，
+    改用各券商官网的公开研报展示页，并先用 `/map` 确认路径。
+  - 文中点名的 WSJ / FT 同理：没有登录 Cookie 时只能取到开头免费预览段。
 - **实时行情不要用 Firecrawl 抓 DOM。** 毫秒级分时/K 线（同花顺、东方财富）请直连它们的
   WebSocket / RESTful 接口。Firecrawl 的强项是「把文章和公告变成干净的 Markdown / JSON」，不是 tick data。
 - **公告列表页是 extract 的理想输入。** 巨潮资讯网的「最新公告」是标准 HTML `<table>`，
   代码/简称/标题/日期四列完整转成 Markdown 表格，每行还带 `announcementId` 详情深链——
   顺着深链再 scrape 一次 10-Q / 三季报正文，就能抽营收、净利、资产负债表核心指标。
+- **源越多，微信里每源条数越少。** 14 个源、88 条时，24000 字节的默认预算下每源只剩前 3 条。
+  要么调大 `--max-bytes`，要么用 `--only` 只推关心的几个源，要么拆成早/晚两次推送。
+
+### 本次实跑结果（2026-10-26）
+
+`output/digest-2026-10-26.json` 完整记录了 14 个源的成败：
+
+| 结果 | 源 | 条数 |
+| --- | --- | --- |
+| ✅ 8 个成功 | 华尔街见闻快讯 7 ｜ 第一财经 13 ｜ 财新 13 ｜ Reuters 11 ｜ Bloomberg 14 ｜ 巨潮 10 ｜ SEC EDGAR 8 ｜ 雪球 12 | **88** |
+| ❌ 6 个失败 | 华尔街见闻深度（SPA 未渲染）、21 世纪（404）、CNBC（500）、迈博汇金（域名失效）、界面新闻 / Seeking Alpha（本次未覆盖） | 0 |
 
 ---
 
@@ -170,7 +191,7 @@ python finance_digest.py --from-json output/digest-2026-10-26.json --title "财�
 不花额度、不联网，验证解析、语言路由、JSON 往返、限长不变式和 PushPlus 请求体：
 
 ```bash
-python selftest.py       # 58 项断言
+python selftest.py       # 63 项断言
 ```
 
 覆盖的是那些「跑一次真实抓取要花额度、错了才知道」的逻辑，包括：
@@ -185,7 +206,7 @@ python selftest.py       # 58 项断言
 examples/finance-digest-pushplus/
 ├── finance_digest.py     一次性抓取 → 渲染 → 推送
 ├── sources.json          财经源清单 + 每源的 Firecrawl 抓取参数 + 中英文 extract prompt
-├── selftest.py           离线自检（58 项）
+├── selftest.py           离线自检（63 项）
 ├── requirements.txt
 ├── .env.example
 └── output/               产物（含一份真实抓取的示例摘要）

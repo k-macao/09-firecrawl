@@ -1,5 +1,5 @@
 {
-  "$comment": "财经类抓取源清单，对应『Firecrawl 在财经与金融领域的应用』一文的三大类站点。字段说明见 README.md。enabled=false 的源为已知的付费墙/强反爬站点，仅作占位与文档用途。",
+  "$comment": "财经类抓取源清单，对应『Firecrawl 在财经与金融领域的应用』一文的三大类站点。字段说明见 README.md。14 个源默认全部 enabled（含付费墙的财新/Bloomberg/迈博汇金）——付费墙源能抓到多少免费内容，各源的 note 字段里有实测结论。language 字段用于覆盖按域名的中英文 prompt 自动路由。",
   "categories": [
     {
       "id": "news",
@@ -18,11 +18,28 @@
           "only_main_content": true,
           "block_ads": true,
           "actions": [
-            { "type": "wait", "milliseconds": 2500 },
-            { "type": "scroll", "direction": "down", "selector": "body" },
-            { "type": "wait", "milliseconds": 1500 },
-            { "type": "scroll", "direction": "down", "selector": "body" },
-            { "type": "wait", "milliseconds": 1500 }
+            {
+              "type": "wait",
+              "milliseconds": 2500
+            },
+            {
+              "type": "scroll",
+              "direction": "down",
+              "selector": "body"
+            },
+            {
+              "type": "wait",
+              "milliseconds": 1500
+            },
+            {
+              "type": "scroll",
+              "direction": "down",
+              "selector": "body"
+            },
+            {
+              "type": "wait",
+              "milliseconds": 1500
+            }
           ],
           "limit": 20
         },
@@ -38,9 +55,19 @@
           "only_main_content": true,
           "block_ads": true,
           "actions": [
-            { "type": "wait", "milliseconds": 2500 },
-            { "type": "scroll", "direction": "down", "selector": "body" },
-            { "type": "wait", "milliseconds": 1500 }
+            {
+              "type": "wait",
+              "milliseconds": 2500
+            },
+            {
+              "type": "scroll",
+              "direction": "down",
+              "selector": "body"
+            },
+            {
+              "type": "wait",
+              "milliseconds": 1500
+            }
           ],
           "limit": 15
         },
@@ -87,14 +114,22 @@
           "id": "caixin",
           "name": "财新网（公开页）",
           "url": "https://www.caixin.com/",
-          "enabled": false,
+          "enabled": true,
           "scenario": "公开的商业报道、深度宏观分析",
-          "note": "⚠️ 付费墙：未登录 Cookie 时 Firecrawl 只能取到开头免费预览段落。默认关闭，避免浪费额度。",
-          "wait_for": 2000,
-          "timeout": 60000,
+          "note": "⚠️ 付费墙。实测：www.caixin.com 会 302 到英文站 caixinglobal.com，其首页头条 + 摘要段（dek）公开可读，正文才上锁——所以列表页可抓，深度文只能拿到免费预览段。中文财新正文需登录 Cookie。",
+          "wait_for": 2500,
+          "timeout": 90000,
           "proxy": "auto",
           "only_main_content": true,
-          "limit": 10
+          "block_ads": true,
+          "location": {
+            "country": "US",
+            "languages": [
+              "en-US"
+            ]
+          },
+          "limit": 15,
+          "language": "en"
         },
         {
           "id": "reuters-markets",
@@ -108,11 +143,26 @@
           "proxy": "auto",
           "only_main_content": true,
           "block_ads": true,
-          "location": { "country": "US", "languages": ["en-US"] },
+          "location": {
+            "country": "US",
+            "languages": [
+              "en-US"
+            ]
+          },
           "actions": [
-            { "type": "wait", "milliseconds": 2000 },
-            { "type": "scroll", "direction": "down", "selector": "body" },
-            { "type": "wait", "milliseconds": 1500 }
+            {
+              "type": "wait",
+              "milliseconds": 2000
+            },
+            {
+              "type": "scroll",
+              "direction": "down",
+              "selector": "body"
+            },
+            {
+              "type": "wait",
+              "milliseconds": 1500
+            }
           ],
           "limit": 15
         },
@@ -128,21 +178,49 @@
           "proxy": "stealth",
           "only_main_content": true,
           "block_ads": true,
-          "location": { "country": "US", "languages": ["en-US"] },
+          "location": {
+            "country": "US",
+            "languages": [
+              "en-US"
+            ]
+          },
           "limit": 15
         },
         {
           "id": "bloomberg-markets",
           "name": "Bloomberg · Markets",
           "url": "https://www.bloomberg.com/markets",
-          "enabled": false,
+          "enabled": true,
           "scenario": "全球宏观经济资讯",
-          "note": "⚠️ 付费墙 + 强反爬，公开页仅能取到少量预览。默认关闭。",
+          "note": "⚠️ 付费墙。实测：/markets 这个 hub 页本身公开可读——Top Securities 行情条（SPX/CCMP/US10Y/Crude/Gold/EURUSD）和十几条带链接的头条都能完整取到，只有 newsletter 区块标着 Subscriber Only。点进单篇深度文才会撞墙。所以抓 hub 页性价比高，抓正文别指望。",
           "wait_for": 3500,
           "timeout": 90000,
           "proxy": "stealth",
           "only_main_content": true,
-          "limit": 10
+          "block_ads": true,
+          "location": {
+            "country": "US",
+            "languages": [
+              "en-US"
+            ]
+          },
+          "actions": [
+            {
+              "type": "wait",
+              "milliseconds": 2500
+            },
+            {
+              "type": "scroll",
+              "direction": "down",
+              "selector": "body"
+            },
+            {
+              "type": "wait",
+              "milliseconds": 1500
+            }
+          ],
+          "limit": 15,
+          "language": "en"
         }
       ]
     },
@@ -174,19 +252,24 @@
           "timeout": 45000,
           "proxy": "basic",
           "only_main_content": true,
-          "location": { "country": "US", "languages": ["en-US"] },
+          "location": {
+            "country": "US",
+            "languages": [
+              "en-US"
+            ]
+          },
           "limit": 20
         },
         {
           "id": "mbhj",
           "name": "迈博汇金 · 研报",
           "url": "https://www.mbhj.com/",
-          "enabled": false,
+          "enabled": true,
           "scenario": "行业趋势分析、个股研究报告",
-          "note": "研报下载多需登录；仅网页版展示页可抓。默认关闭。",
+          "note": "⚠️ 实测不可达：www.mbhj.com 直接返回 ERR_BLOCKED_BY_CLIENT（域名已失效或被拦截），页面标题只剩占位符。研报下载本来就多需登录。保留此条是为了记录『券商研报聚合站域名不稳』这个事实——真要抓研报，建议改用各券商官网的公开研报展示页，并先用 /map 确认路径。",
           "wait_for": 3000,
           "timeout": 90000,
-          "proxy": "auto",
+          "proxy": "stealth",
           "only_main_content": true,
           "limit": 15
         }
@@ -209,11 +292,28 @@
           "only_main_content": true,
           "block_ads": true,
           "actions": [
-            { "type": "wait", "milliseconds": 2500 },
-            { "type": "scroll", "direction": "down", "selector": "body" },
-            { "type": "wait", "milliseconds": 1500 },
-            { "type": "scroll", "direction": "down", "selector": "body" },
-            { "type": "wait", "milliseconds": 1500 }
+            {
+              "type": "wait",
+              "milliseconds": 2500
+            },
+            {
+              "type": "scroll",
+              "direction": "down",
+              "selector": "body"
+            },
+            {
+              "type": "wait",
+              "milliseconds": 1500
+            },
+            {
+              "type": "scroll",
+              "direction": "down",
+              "selector": "body"
+            },
+            {
+              "type": "wait",
+              "milliseconds": 1500
+            }
           ],
           "limit": 15
         },
@@ -229,7 +329,12 @@
           "proxy": "auto",
           "only_main_content": true,
           "block_ads": true,
-          "location": { "country": "US", "languages": ["en-US"] },
+          "location": {
+            "country": "US",
+            "languages": [
+              "en-US"
+            ]
+          },
           "limit": 15
         }
       ]
