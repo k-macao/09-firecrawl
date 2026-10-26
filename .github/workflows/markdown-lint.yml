@@ -10,7 +10,7 @@ name: Lint Markdown
 # pull request would fail PRs that touch a single unrelated file, which teaches
 # people to ignore the check. So PRs are gated on the markdown they actually
 # changed, while the backlog is surfaced on main and on a schedule — where a
-# failure hands off to the Claude remediation workflow instead of blocking
+# failure hands off to the AI remediation workflow instead of blocking
 # somebody's feature work.
 
 on:
@@ -185,9 +185,9 @@ jobs:
             if [ "${{ steps.scan.outputs.exit_code }}" = "2" ]; then
               echo "⚠️ The linter could not run. These counts are not meaningful."
             elif [ "${{ steps.scan.outputs.has_findings }}" = "true" ]; then
-              echo "Findings remain on \`${GITHUB_REF_NAME}\`. The *Markdown Lint Claude"
+              echo "Findings remain on \`${GITHUB_REF_NAME}\`. The *Markdown Lint AI"
               echo "Remediation* workflow picks this failure up, applies \`hallmark fix\`,"
-              echo "and asks Claude to settle what needs a judgement call."
+              echo "and asks the model to settle what needs a judgement call."
             else
               echo "Clean."
             fi
