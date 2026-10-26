@@ -1,0 +1,292 @@
+name: Markdown Lint AI Remediation
+
+# Naming note: the harness is still Claude Code (`claude-code-action`, its
+# `claude_args`, the `claude/` branch prefix) — that is the agent loop doing the
+# editing. The model behind it is DeepSeek, reached through DeepSeek's
+# Anthropic-compatible endpoint. Identifiers that belong to the harness keep
+# their names; only the credential and the prose about the model changed.
+#
+# The display name is provider-neutral on purpose: swapping the model again
+# should not rename the workflow and orphan its run history in the Actions UI.
+
+# Companion to markdown-lint.yml, structured the same way as
+# npm-audit-claude-remediation.yml: a scan job decides whether there is work,
+# a remediate job hands that work to a model.
+#
+# The division of labour is the point of this workflow. Measured on this repo
+# (2026-10-26):
+#
+#   304 findings across 43 files
+#   ├─ 232 are mechanical and `hallmark fix` resolves them in seconds
+#   │  (literal URLs, bullet indentation, table padding, undefined references,
+#   │   missing final newlines, strong/emphasis markers, …)
+#   └─  79 across 19 files survive the fixer and need a judgement call
+#      ├─ 36 remark-validate-links:missing-file
+#      ├─ 38 remark-common-changelog:* (semver / date / empty release)
+#      └─  5 remark-lint:no-auto-link-without-protocol
+#
+# So the fixer runs first and its diff rides along in the same PR; the model
+# only spends turns on the residue. Asking a model to reformat 232 table cells would
+# be slow, expensive, and less reliable than the deterministic fixer.
+
+on:
+  workflow_run:
+    workflows: ["Lint Markdown"]
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  HALLMARK_VERSION: "5.0.2"
+
+jobs:
+  scan:
+    # The `event != 'pull_request'` guard is what stops a loop: a remediation PR
+    # opens, markdown-lint.yml runs against it, and if that run fails it would
+    # otherwise re-trigger this workflow. Marker dedupe is the second line of
+    # defence, but do not rely on one guard when two are cheap.
+    # Single-line on purpose: a folded (>-) scalar keeps its newlines when the
+    # continuation lines are indented further than the first, and relying on
+    # GitHub tolerating a multi-line expression here buys nothing.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.event != 'pull_request') }}
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      needs_ai: ${{ steps.scan.outputs.needs_ai }}
+      uncovered_findings: ${{ steps.scan.outputs.uncovered_findings }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Install hallmark
+        run: |
+          set -euo pipefail
+          npm install --prefix /tmp/hallmark-tool --no-audit --no-fund "hallmark@${HALLMARK_VERSION}"
+          echo "HALLMARK_MODULE=/tmp/hallmark-tool/node_modules/hallmark/index.js" >> "$GITHUB_ENV"
+
+      - name: Scan default branch markdown
+        id: scan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        # --fix is safe here: this job's working tree is thrown away, and running
+        # the fixer is how the scanner learns which findings genuinely need a
+        # judgement call instead of guessing from a hardcoded rule list.
+        run: node .github/scripts/hallmark-markdown-scan.mjs --fix
+
+      - name: Skip when nothing needs a judgement call
+        if: ${{ steps.scan.outputs.needs_ai != 'true' }}
+        run: |
+          echo "No unhandled markdown lint findings on ${GITHUB_REF_NAME}; skipping AI remediation."
+
+  remediate:
+    needs: scan
+    if: ${{ needs.scan.outputs.needs_ai == 'true' }}
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 90
+    concurrency:
+      group: markdown-lint-claude-remediation-${{ github.event.repository.default_branch }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+    env:
+      MD_LINT_SLACK_WEBHOOK_URL: ${{ secrets.MD_LINT_SLACK_WEBHOOK_URL }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          # Full history is required, not a nicety: recovering a CHANGELOG
+          # version means reading `git tag --list` and `git log`, and resolving
+          # a moved link means `git log --follow`. A depth-1 clone makes the
+          # prompt's primary research route fail.
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Install hallmark
+        run: |
+          set -euo pipefail
+          npm install --prefix /tmp/hallmark-tool --no-audit --no-fund "hallmark@${HALLMARK_VERSION}"
+          echo "HALLMARK_MODULE=/tmp/hallmark-tool/node_modules/hallmark/index.js" >> "$GITHUB_ENV"
+          # Handy shorthand for the model, which will want to re-lint as it works.
+          echo "HALLMARK_BIN=/tmp/hallmark-tool/node_modules/.bin/hallmark" >> "$GITHUB_ENV"
+
+      - name: Rescan and apply the mechanical fixes
+        id: scan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        # Leaves `hallmark fix`'s output in the working tree, so the PR the model
+        # opens contains both the mechanical diff and its own judgement calls.
+        run: node .github/scripts/hallmark-markdown-scan.mjs --fix
+
+      # Model provider: DeepSeek, reached through its Anthropic-compatible
+      # endpoint rather than a translation proxy. DeepSeek documents
+      # https://api.deepseek.com/anthropic as the intended path for Claude Code
+      # and marks the `x-api-key` header "Fully Supported", so the harness stays
+      # claude-code-action and only the endpoint, credential and model names
+      # change.
+      #
+      # Two constraints worth knowing before editing this block:
+      #
+      #   - The credential MUST go through the `anthropic_api_key` input. The
+      #     action's validate-env accepts only ANTHROPIC_API_KEY, an OAuth token,
+      #     or workload identity; ANTHROPIC_AUTH_TOKEN on its own fails
+      #     validation before a single request is sent. AUTH_TOKEN is also set
+      #     below because DeepSeek's own Claude Code guide uses it, and both
+      #     carry the same key.
+      #   - `cache_control` is ignored by DeepSeek's Anthropic endpoint, so
+      #     prompt caching does not apply. Budget for that: a run costs more than
+      #     the same run against Anthropic even at DeepSeek's lower token prices.
+      #
+      # If this step ever starts returning 400s, the first thing to try is
+      # CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1 — beta headers a third-party
+      # endpoint does not know are the most common cause. DeepSeek documents
+      # `anthropic-beta` as ignored for /messages, so it is not set preemptively.
+      #
+      # The tool allowlist grants `hallmark lint` but deliberately not
+      # `hallmark fix`: the fixer has already run once in this workspace and a
+      # second pass is measurably harmful (see assertTreeCleanForFix in the
+      # scanner). The scanner's own guard is the hard stop; this keeps the model
+      # from wandering into it in the first place.
+      - name: Run DeepSeek remediation
+        id: claude
+        if: ${{ steps.scan.outputs.needs_ai == 'true' }}
+        uses: anthropics/claude-code-action@2cc1ac1331eac7a6a96d716dd204dd2888d0fcd2 # v1
+        env:
+          ANTHROPIC_BASE_URL: https://api.deepseek.com/anthropic
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.MD_LINT_DEEPSEEK_API_KEY }}
+          # Main loop on v4-pro: what survives `hallmark fix` is judgement work
+          # (did this link target move, what version was this release), not
+          # volume. Haiku-tier and subagent work drops to flash.
+          ANTHROPIC_MODEL: deepseek-v4-pro
+          ANTHROPIC_DEFAULT_OPUS_MODEL: deepseek-v4-pro
+          ANTHROPIC_DEFAULT_SONNET_MODEL: deepseek-v4-pro
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: deepseek-flash
+          CLAUDE_CODE_SUBAGENT_MODEL: deepseek-flash
+          # With a DeepSeek key, any incidental call Claude Code makes to
+          # Anthropic's own endpoints (telemetry, key checks) would 401. Shut
+          # that traffic off rather than debugging a spurious auth failure.
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+          CLAUDE_CODE_EFFORT_LEVEL: max
+        with:
+          anthropic_api_key: ${{ secrets.MD_LINT_DEEPSEEK_API_KEY }}
+          additional_permissions: |
+            issues: read
+          base_branch: ${{ github.event.repository.default_branch }}
+          branch_prefix: claude/md-lint/
+          prompt: ${{ steps.scan.outputs.prompt }}
+          claude_args: |
+            --max-turns 60
+            --allowedTools "Read,Edit,MultiEdit,Write,Glob,Grep,LS,WebSearch,TodoWrite,Bash(git:*),Bash(gh:*),Bash(node:*),Bash(jq:*),Bash(rg:*),Bash(date:*),Bash(/tmp/hallmark-tool/node_modules/.bin/hallmark lint:*)"
+
+      # Closed loop: the PR the model just opened is itself a pull_request, so
+      # markdown-lint.yml's `changed` job lints every markdown file it touched.
+      # Anything the model missed fails that check on its own PR, where a human is
+      # already looking, rather than silently returning to the backlog.
+      - name: Ensure remediation PR marker
+        id: remediation_pr
+        if: ${{ steps.scan.outputs.needs_ai == 'true' && steps.claude.outputs.branch_name != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.claude.outputs.branch_name }}
+          MARKER: ${{ steps.scan.outputs.marker }}
+        run: |
+          set -euo pipefail
+
+          PR_NUMBER="$(gh pr list --head "$BRANCH_NAME" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::warning::Claude did not leave an open PR for branch ${BRANCH_NAME}; marker could not be enforced."
+            exit 0
+          fi
+
+          PR_URL="$(gh pr view "$PR_NUMBER" --json url --jq '.url')"
+          PR_TITLE="$(gh pr view "$PR_NUMBER" --json title --jq '.title')"
+          PR_SUMMARY="$(node -e 'const title = process.argv[1] || ""; console.log(title.replace(/^[A-Za-z]+(?:\([^)]+\))?!?:\s*/, ""));' "$PR_TITLE")"
+
+          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          echo "summary=${PR_SUMMARY}" >> "$GITHUB_OUTPUT"
+
+          gh label create md-lint-remediation \
+            --description "Automated Markdown style remediation (hallmark)" \
+            --color "1D76DB" \
+            2>/dev/null || true
+          gh pr edit "$PR_NUMBER" --add-label md-lint-remediation
+
+          BODY_FILE="$(mktemp)"
+          UPDATED_BODY_FILE="$(mktemp)"
+          gh pr view "$PR_NUMBER" --json body --jq '.body // ""' > "$BODY_FILE"
+
+          node - "$BODY_FILE" "$UPDATED_BODY_FILE" "$MARKER" <<'NODE'
+          const { readFileSync, writeFileSync } = require("node:fs");
+
+          const [, , inputPath, outputPath, marker] = process.argv;
+          const markerRegex = /<!--\s*hallmark-md-keys:\s*\[[\s\S]*?\]\s*-->/;
+          let body = readFileSync(inputPath, "utf8");
+
+          if (!markerRegex.test(body)) {
+            if (/^## Summary\b.*$/m.test(body)) {
+              body = body.replace(/^## Summary\b.*$/m, (heading) => `${heading}\n\n${marker}`);
+            } else {
+              body = `## Summary\n\n${marker}\n\n${body.trim()}\n`;
+            }
+          }
+
+          writeFileSync(outputPath, body);
+          NODE
+
+          gh pr edit "$PR_NUMBER" --body-file "$UPDATED_BODY_FILE"
+
+      - name: Request code review
+        if: ${{ steps.scan.outputs.needs_ai == 'true' && steps.claude.outputs.branch_name != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.claude.outputs.branch_name }}
+        run: |
+          set -euo pipefail
+          PR_NUMBER="$(gh pr list --head "$BRANCH_NAME" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::warning::No open PR for ${BRANCH_NAME}; cannot request reviewers."
+            exit 0
+          fi
+          gh pr edit "$PR_NUMBER" --add-reviewer abimaelmartell,mogery
+
+      - name: Notify Slack about remediation PR
+        if: ${{ steps.remediation_pr.outputs.pr_url != '' && env.MD_LINT_SLACK_WEBHOOK_URL != '' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ env.MD_LINT_SLACK_WEBHOOK_URL }}
+          PR_URL: ${{ steps.remediation_pr.outputs.pr_url }}
+          SUMMARY: ${{ steps.remediation_pr.outputs.summary }}
+        run: |
+          set -euo pipefail
+
+          jq -n \
+            --arg pr_url "$PR_URL" \
+            --arg summary "$SUMMARY" \
+            '{pr_url: $pr_url, summary: $summary}' \
+            | curl --fail-with-body --show-error --silent \
+              --request POST \
+              --header "Content-Type: application/json" \
+              --data @- \
+              "$SLACK_WEBHOOK_URL"

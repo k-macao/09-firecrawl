@@ -36,6 +36,29 @@ pnpm start
 
 For API changes, prefer end-to-end snippet coverage when the behavior crosses routes, workers, queues, or scraping engines.
 
+## Write lint-clean Markdown
+
+Markdown style is enforced by [hallmark](https://github.com/vweevers/hallmark), a `remark-lint` preset. Pull requests are checked only on the Markdown they actually change, so the existing backlog elsewhere in the tree will not fail your build.
+
+Install the linter outside the checkout, because the repository has no root `package.json`:
+
+```bash
+npm install --prefix /tmp/hallmark-tool --no-audit --no-fund hallmark@5.0.2
+```
+
+Check your work, then fix what is mechanical:
+
+```bash
+/tmp/hallmark-tool/node_modules/.bin/hallmark lint '**/*.md'
+/tmp/hallmark-tool/node_modules/.bin/hallmark fix '**/*.md'
+```
+
+Note that hallmark's built-in default glob is the non-recursive `*.md`, so a bare `hallmark lint` only inspects the documents in your current directory. The checked-in `.hallmarkrc` overrides that to `**/*.md`; keep passing the glob explicitly if you run the linter from somewhere else.
+
+Run `fix` once. It is not idempotent, and a second pass appends duplicate link reference definitions to the SDK changelogs. `.github/scripts/hallmark-markdown-scan.mjs` refuses to fix a tree whose Markdown is already modified for exactly this reason.
+
+What the fixer cannot settle — a link whose target moved or was deleted, a changelog heading that is not semver-valid — needs a judgement call, and that is what `.github/workflows/markdown-lint-claude-remediation.yml` handles on a schedule.
+
 ## Run API tests with the harness
 
 From `apps/api`, run the snippet suites with their dependencies:

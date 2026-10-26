@@ -1,0 +1,1191 @@
+{
+  "generated_at": "2026-10-26 15:32:07 CST",
+  "date_label": "2026-10-26",
+  "firecrawl_api_url": "https://api.firecrawl.dev",
+  "collector": "手工抓取（Arena fetch_page；本沙箱无法访问 api.firecrawl.dev）",
+  "stats": {
+    "sources_ok": 8,
+    "sources_failed": 6,
+    "total_items": 88
+  },
+  "sources": [
+    {
+      "id": "wallstreetcn-live",
+      "name": "华尔街见闻 · 7x24 快讯",
+      "url": "https://wallstreetcn.com/live/global",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://api-one.wallstcn.com/apiv1/content/lives?channel=global-channel&client=pc&limit=15",
+      "note": "wallstreetcn.com/live/global 是 SPA，直连只返回「正在加载」骨架；改取站点自有的 JSON 接口 api-one.wallstcn.com/apiv1/content/lives 即拿到干净的快讯正文。用 Firecrawl 时应配 wait_for=4000 + 滚动 actions 直接渲染 SPA，无需绕接口。",
+      "items": [
+        {
+          "title": "英国10月CBI零售销售差值 -10，前值 -55",
+          "url": "https://wallstreetcn.com/livenews/3186085",
+          "published_at": "",
+          "summary": "财经日历数据：英国 10 月 CBI 零售销售差值从前值 -55 回升至 -10。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "cbi_retail_sales_diff": "-10",
+            "previous": "-55"
+          }
+        },
+        {
+          "title": "荣盛发展：2026年第三季度净利润亏损5.77亿元，同比由盈转亏",
+          "url": "https://wallstreetcn.com/livenews/3186083",
+          "published_at": "",
+          "summary": "Q3 营收 29.97 亿元同比降 51.72%，归母净利亏损 5.77 亿元、扣非亏损 8.98 亿元；前三季度营收 91.69 亿元同比降 55.03%，归母净利亏损 16.03 亿元。",
+          "company_name": "荣盛发展",
+          "stock_code": "SZ002146",
+          "key_metrics": {
+            "q3_revenue": "29.97亿元",
+            "q3_revenue_yoy": "-51.72%",
+            "q3_net_profit": "-5.77亿元",
+            "q3_net_profit_deducted": "-8.98亿元",
+            "ytd_revenue": "91.69亿元",
+            "ytd_revenue_yoy": "-55.03%",
+            "ytd_net_profit": "-16.03亿元"
+          }
+        },
+        {
+          "title": "金龙羽：前三季度归母净利润5173.84万元，同比下降50.72%",
+          "url": "https://wallstreetcn.com/livenews/3186080",
+          "published_at": "",
+          "summary": "前三季度营收 37.76 亿元同比增 1.15%，归母净利 5173.84 万元同比降 50.72%；Q3 单季营收 15.29 亿元降 3.06%，归母净利 1334.99 万元降 65.13%。",
+          "company_name": "金龙羽",
+          "stock_code": "SZ002882",
+          "key_metrics": {
+            "ytd_revenue": "37.76亿元",
+            "ytd_revenue_yoy": "+1.15%",
+            "ytd_net_profit": "5173.84万元",
+            "ytd_net_profit_yoy": "-50.72%",
+            "ytd_net_profit_deducted": "5920.36万元",
+            "q3_revenue": "15.29亿元",
+            "q3_net_profit": "1334.99万元",
+            "q3_net_profit_yoy": "-65.13%"
+          }
+        },
+        {
+          "title": "汇丰转而看好债券 认为固收市场抛售已“过度”",
+          "url": "https://wallstreetcn.com/livenews/3186074",
+          "published_at": "",
+          "summary": "汇丰策略师将发达市场政府债券由最大程度低配上调至超配，股票由最大程度超配下调至中性。Max Kettner 团队点名 2027 年三大主题：中东与石油、美联储鹰派立场可能转变、超大规模数据中心运营商的自由现金流；预计美联储鹰派立场将在上半年转变，仍更看好标普 500 而非纳指 100 或欧洲/新兴市场股票。（彭博）",
+          "company_name": "汇丰控股",
+          "stock_code": "",
+          "key_metrics": {
+            "sowi_gov_bonds": "低配→超配",
+            "sowi_equities": "超配→中性"
+          }
+        },
+        {
+          "title": "金刚光伏：孙公司签订GPU卡及服务器采购合同，合计金额4.8亿元",
+          "url": "https://wallstreetcn.com/livenews/3186068",
+          "published_at": "",
+          "summary": "全资孙公司欧昊新能源电力（甘肃）与两家供应商签署 GPU 卡及服务器采购合同，含税金额分别 3.48 亿元、1.32 亿元，合计 4.8 亿元，用于向客户提供算力服务。",
+          "company_name": "金刚光伏",
+          "stock_code": "",
+          "key_metrics": {
+            "contract_total": "4.8亿元",
+            "supplier_a": "3.48亿元",
+            "supplier_b": "1.32亿元"
+          }
+        },
+        {
+          "title": "云南铜业：2026年第三季度净利润7.03亿元，同比增长143.77%",
+          "url": "https://wallstreetcn.com/livenews/3186059",
+          "published_at": "",
+          "summary": "Q3 营收 523.06 亿元同比增 10.60%，归母净利 7.03 亿元同比增 143.77%，扣非净利 6.98 亿元同比增 233.02%；前三季度营收 1638.55 亿元增 24.78%，归母净利 26 亿元增 47.86%。",
+          "company_name": "云南铜业",
+          "stock_code": "SZ000878",
+          "key_metrics": {
+            "q3_revenue": "523.06亿元",
+            "q3_revenue_yoy": "+10.60%",
+            "q3_net_profit": "7.03亿元",
+            "q3_net_profit_yoy": "+143.77%",
+            "q3_net_profit_deducted_yoy": "+233.02%",
+            "ytd_revenue": "1638.55亿元",
+            "ytd_revenue_yoy": "+24.78%",
+            "ytd_net_profit": "26亿元",
+            "ytd_net_profit_yoy": "+47.86%"
+          }
+        },
+        {
+          "title": "欧普康视：前三季度归母净利润4.03亿元，同比下降8.85%",
+          "url": "https://wallstreetcn.com/livenews/3186052",
+          "published_at": "",
+          "summary": "前三季度营收 13.88 亿元同比降 3.09%，归母净利 4.03 亿元降 8.85%；Q3 单季营收 5.23 亿元降 6.90%，归母净利 1.71 亿元降 10.94%。",
+          "company_name": "欧普康视",
+          "stock_code": "SZ300595",
+          "key_metrics": {
+            "ytd_revenue": "13.88亿元",
+            "ytd_revenue_yoy": "-3.09%",
+            "ytd_net_profit": "4.03亿元",
+            "ytd_net_profit_yoy": "-8.85%",
+            "q3_revenue": "5.23亿元",
+            "q3_net_profit": "1.71亿元",
+            "q3_net_profit_yoy": "-10.94%"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wallstreetcn-news",
+      "name": "华尔街见闻 · 深度资讯",
+      "url": "https://wallstreetcn.com/news/global",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": false,
+      "error": "抓取成功但内容为空：SPA 未渲染完成，正文区仅返回「正在加载」骨架与 App 下载二维码",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://wallstreetcn.com/news/global",
+      "note": "印证文中『极强反爬控制 / 需调整 Wait for 或增加 Actions 模拟滚动』的提醒。Firecrawl 侧请配 wait_for=4000 与两到三次 scroll action；手工抓取时可改用该站的 JSON 接口。",
+      "items": []
+    },
+    {
+      "id": "yicai-news",
+      "name": "第一财经 · 新闻",
+      "url": "https://www.yicai.com/news/",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.yicai.com/news/",
+      "note": "服务端渲染，文字与结构化标题提取完整，无需 actions。免费公开页，符合文中『公开免费页面』的定位。",
+      "items": [
+        {
+          "title": "英维克前三季度净利润下滑7.62%，股价年内接近“腰斩”",
+          "url": "https://www.yicai.com/news/103409713.html",
+          "published_at": "5分钟前",
+          "summary": "进入第三季度英维克利润降幅有所收窄，但作为液冷龙头，其业绩修复与兑现并不及预期。",
+          "company_name": "英维克",
+          "stock_code": "SZ002837",
+          "key_metrics": {
+            "ytd_net_profit_yoy": "-7.62%"
+          }
+        },
+        {
+          "title": "九号公司2026年前三季度实现营收219.43亿元，继续加码研发",
+          "url": "https://www.yicai.com/news/103409722.html",
+          "published_at": "11分钟前",
+          "summary": "前三季度营收 219.43 亿元同比增 19.32%，归母净利 13.51 亿元，展现较强经营韧性。",
+          "company_name": "九号公司",
+          "stock_code": "SH689009",
+          "key_metrics": {
+            "ytd_revenue": "219.43亿元",
+            "ytd_revenue_yoy": "+19.32%",
+            "ytd_net_profit": "13.51亿元"
+          }
+        },
+        {
+          "title": "DeepSeek调用量连续三周全球第一，但最赚钱的还是海外模型",
+          "url": "https://www.yicai.com/news/103409676.html",
+          "published_at": "26分钟前",
+          "summary": "中国模型包揽调用量前五，商业化是下一战。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "美国拟限制生物技术投资，会打断中国创新药对外授权浪潮吗？",
+          "url": "https://www.yicai.com/news/103409664.html",
+          "published_at": "26分钟前",
+          "summary": "第十一届医药创新与投资大会上，该政策落地后的影响与中国创新药授权交易的应对成为热议焦点。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "晚间公告｜10月26日这些公告有看头",
+          "url": "https://www.yicai.com/news/103409671.html",
+          "published_at": "30分钟前",
+          "summary": "第一财经对当日重要公告的汇总，供投资者参考。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "龙虎榜丨机构今日买入这17股，卖出华依科技1.37亿元",
+          "url": "https://www.yicai.com/news/103409645.html",
+          "published_at": "53分钟前",
+          "summary": "共 47 只个股出现机构身影。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "institution_net_buy_stocks": "17只",
+            "huayi_tech_sell": "1.37亿元",
+            "stocks_with_institutions": "47只"
+          }
+        },
+        {
+          "title": "字节跳动扩招算力人才，大厂AI竞争进入软硬协同阶段",
+          "url": "https://www.yicai.com/news/103409644.html",
+          "published_at": "55分钟前",
+          "summary": "厂商需要将算力转化为更高的训练效率、更低的推理成本和可持续的产品交付能力。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "全球央行“超级周”再度来袭：美欧日预计或均将按兵不动",
+          "url": "https://www.yicai.com/news/103409613.html",
+          "published_at": "1小时前",
+          "summary": "威斯特在报告中写道：前瞻性指引可能比决议本身更重要。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "高压电池存起火风险，大众汽车全球召回7.27万辆电动车",
+          "url": "https://www.yicai.com/news/103409577.html",
+          "published_at": "1小时前",
+          "summary": "电池安全问题引发的全球召回不在少数。",
+          "company_name": "大众汽车",
+          "stock_code": "",
+          "key_metrics": {
+            "recall_units": "7.27万辆"
+          }
+        },
+        {
+          "title": "实探华强北：高端显卡涨价疯狂，有商家称一周涨了上千元",
+          "url": "https://www.yicai.com/news/103409569.html",
+          "published_at": "1小时前",
+          "summary": "商家表示近期高端消费级显卡价格每天实时变动，报价只对当下有效。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "7只主动ETF提前“售罄”，超250亿资金集结完毕",
+          "url": "https://www.yicai.com/news/103409530.html",
+          "published_at": "1小时前",
+          "summary": "据第一财经不完全统计，首批主动 ETF 截至目前募集规模已达 253 亿元左右。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "active_etf_count": "7只",
+            "amount_raised": "约253亿元"
+          }
+        },
+        {
+          "title": "首批展品抵沪！第九届进博会布展全面启动，多款全球、亚洲首秀新品来了",
+          "url": "https://www.yicai.com/news/103409616.html",
+          "published_at": "1小时前",
+          "summary": "预计 10 月 31 日所有展台结构基本完工，11 月 3 日展品基本可进展台落位。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "辅助驾驶，正在成为中国车企出海的新船票",
+          "url": "https://www.yicai.com/news/103409505.html",
+          "published_at": "2小时前",
+          "summary": "中国汽车出口有了新抓手。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        }
+      ]
+    },
+    {
+      "id": "jiemian-finance",
+      "name": "界面新闻 · 财经",
+      "url": "https://www.jiemian.com/lists/60.html",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": false,
+      "error": "本次手工抓取未覆盖（沙箱出网白名单未放行该域名）",
+      "status_code": null,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "",
+      "note": "sources.json 里已 enabled。用 Firecrawl 跑时会正常抓取；本次因沙箱网络限制未覆盖，不编造内容占位。",
+      "items": []
+    },
+    {
+      "id": "21jingji",
+      "name": "21 世纪经济报道",
+      "url": "https://www.21jingji.com/",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": false,
+      "error": "HTTP 404：频道页 /channel/latestnews 已失效，返回站点自建 404 页（“由于无法控制的原因，该页面已神秘失踪”）",
+      "status_code": 404,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.21jingji.com/channel/latestnews",
+      "note": "财经站的栏目路径经常改版。生产上应先用 Firecrawl 的 /map 或 /crawl 发现当前有效路径，再把稳定 URL 写回 sources.json，不要硬编码频道页。",
+      "items": []
+    },
+    {
+      "id": "caixin",
+      "name": "财新网（公开页）",
+      "url": "https://www.caixin.com/",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.caixinglobal.com/",
+      "note": "实测：请求 www.caixin.com 被 302 重定向到英文站 caixinglobal.com。首页 TOP STORIES / INSIGHT / LATEST NEWS 的标题 + 摘要段（dek）+ 详情页深链全部公开可读，付费墙锁的是正文。结论印证文中『没有登录 Cookie 只能抓取到开头免费的预览段落』——但列表页信息量已经够做摘要。若要中文财新正文，需带登录 Cookie（Firecrawl 的 headers 选项）。",
+      "items": [
+        {
+          "title": "U.S. Proposes Expanding China Investment Controls to Biotech",
+          "url": "https://www.caixinglobal.com/2026-10-26/us-proposes-expanding-china-investment-controls-to-biotech-102497316.html",
+          "published_at": "2026-10-26",
+          "summary": "Treasury's plan could subject joint drug-development ventures, offshore spinoffs and equity investments to national-security review, while generally leaving traditional licensing deals outside its scope.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Coal Falls Below Half of China's Power Output for First Time",
+          "url": "https://www.caixinglobal.com/2026-10-26/coal-falls-below-half-of-chinas-power-output-for-first-time-102497427.html",
+          "published_at": "2026-10-26",
+          "summary": "Coal's share of electricity generation dropped to 49.7% in H1 2026 as renewable energy expanded, the environment ministry said.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "coal_share_h1_2026": "49.7%"
+          }
+        },
+        {
+          "title": "China's First Regional Power Market Begins Full Operation",
+          "url": "https://www.caixinglobal.com/2026-10-26/chinas-first-regional-power-market-begins-full-operation-102497300.html",
+          "published_at": "2026-10-26",
+          "summary": "The mechanism breaks down provincial barriers across five southern regions, creating a pricing hub to optimize power allocation and absorb record levels of renewable generation.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "regions_covered": "5"
+          }
+        },
+        {
+          "title": "China Proposes Easing Borrowing Rules for Foreign-Invested Firms",
+          "url": "https://www.caixinglobal.com/2026-10-26/china-proposes-easing-borrowing-rules-for-foreign-invested-firms-102497441.html",
+          "published_at": "2026-10-26",
+          "summary": "Draft would free up cross-border financing capacity for eligible companies and green projects.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Chinese Chip Billionaire Arrested as Graft Probe Widens",
+          "url": "https://www.caixinglobal.com/2026-10-26/chinese-chip-billionaire-arrested-as-graft-probe-widens-102497557.html",
+          "published_at": "Oct 26, 2026 07:11 PM",
+          "summary": "Lin Xiucheng's arrest follows a probe into former Chongqing Mayor Hu Henghua, who backed Lin's major semiconductor projects.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Apple's Debut Foldable Suffers Hardware and Software Glitches",
+          "url": "https://www.caixinglobal.com/2026-10-26/apples-debut-foldable-suffers-hardware-and-software-glitches-102497546.html",
+          "published_at": "2026-10-26",
+          "summary": "Broken hinges and app incompatibility cast a shadow over the iPhone Duo, which the company hails as the most transformative iPhone in years.",
+          "company_name": "Apple",
+          "stock_code": "AAPL",
+          "key_metrics": {}
+        },
+        {
+          "title": "Cover Story: How a High School Protest Sparked France's Autumn of Fury",
+          "url": "https://www.caixinglobal.com/2026-10-26/cover-story-how-a-high-school-protest-sparked-frances-autumn-of-fury-102497202.html",
+          "published_at": "2026-10-26",
+          "summary": "What began as a demand for better schools has become a nationwide confrontation over spending cuts and living standards, deepening France's political divide as Macron's presidency nears its end.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Weekend Long Read: A Weaker Trump May be a Louder Trump, Zoellick Says",
+          "url": "https://www.caixinglobal.com/2026-10-24/weekend-long-read-a-weaker-trump-may-be-a-louder-trump-zoellick-says-102496700.html",
+          "published_at": "2026-10-24",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "In Depth: China's Offshore Trust Tax Grace Period Ends as Questions Linger",
+          "url": "https://www.caixinglobal.com/2026-10-23/in-depth-chinas-offshore-trust-tax-grace-period-ends-as-questions-linger-102496220.html",
+          "published_at": "2026-10-23",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Analysis: What China's Economic Statistics Are Missing",
+          "url": "https://www.caixinglobal.com/2026-10-23/analysis-what-chinas-economic-statistics-are-missing-102496381.html",
+          "published_at": "2026-10-23",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Caixin Explains: What China's Proposed Shift to an Overnight Policy Rate Would Mean",
+          "url": "https://www.caixinglobal.com/2026-10-21/caixin-explains-what-chinas-proposed-shift-to-an-overnight-policy-rate-would-mean-102495438.html",
+          "published_at": "2026-10-21",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Cover Story: China's Power Retailers Reel as Cheap Deals Backfire",
+          "url": "https://www.caixinglobal.com/2026-10-19/cover-story-chinas-power-retailers-reel-as-cheap-deals-backfire-102494733.html",
+          "published_at": "2026-10-19",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "China Targets 3.5 Trillion Yuan Pharmaceutical Industry by 2030",
+          "url": "https://www.caixinglobal.com/2026-09-18/china-targets-35-trillion-yuan-pharmaceutical-industry-by-2030-102486229.html",
+          "published_at": "2026-09-18",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "pharma_industry_target_2030": "3.5万亿元"
+          }
+        }
+      ]
+    },
+    {
+      "id": "reuters-markets",
+      "name": "Reuters · Markets",
+      "url": "https://www.reuters.com/markets/",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.reuters.com/markets/",
+      "note": "JS 渲染的动态行情条与新闻列表均成功加载，转出格式规整的英文 Markdown；页面底部有软注册墙，但列表区公开可读。行情时间戳为 Oct 26, 2026, 6:50 AM EDT。",
+      "items": [
+        {
+          "title": "Stocks, bonds cautious ahead of 'formidable' week for risk",
+          "url": "https://www.reuters.com/world/asia-pacific/global-markets-pix-2026-10-26/",
+          "published_at": "5:30 AM EDT",
+          "summary": "Global shares edged up on Monday as oil eased from six-month highs, ahead of a week of central bank meetings and corporate earnings that will further test confidence in the AI boom.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Global markets technicals (graphic)",
+          "url": "https://www.reuters.com/markets/global-markets-technicals-graphic-2026-10-26/",
+          "published_at": "33 mins ago",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Oil prices down almost 1% in early trading",
+          "url": "https://www.reuters.com/business/energy/oil-prices-down-almost-1-early-trading-2026-10-25/",
+          "published_at": "40 mins ago",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "brent_change_pct": "-1.48%",
+            "brent_last": "114.99USD"
+          }
+        },
+        {
+          "title": "Currency markets subdued ahead of pivotal central bank week",
+          "url": "https://www.reuters.com/world/africa/currency-markets-subdued-ahead-pivotal-central-bank-week-2026-10-26/",
+          "published_at": "10 mins ago",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Sterling drops against euro, dollar ahead of UK budget",
+          "url": "https://www.reuters.com/world/uk/sterling-drops-against-euro-dollar-ahead-uk-budget-2026-10-26/",
+          "published_at": "",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Global markets view: USA (Reuters Open Interest)",
+          "url": "https://www.reuters.com/commentary/reuters-open-interest/global-markets-view-usa-2026-10-26/",
+          "published_at": "19 mins ago",
+          "summary": "COMMENTARY",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Euro zone firms find it harder to get credit, ECB survey shows",
+          "url": "https://www.reuters.com/legal/transactional/euro-zone-firms-find-it-harder-get-credit-ecb-survey-shows-2026-10-26/",
+          "published_at": "28 mins ago",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "How Trump's energy dominance turned into hubris",
+          "url": "https://www.reuters.com/commentary/reuters-open-interest/how-trumps-energy-dominance-turned-into-hubris-bousso-2026-10-24/",
+          "published_at": "",
+          "summary": "Ron Bousso",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "US tariff war is fueling Vietnam's coal boom",
+          "url": "https://www.reuters.com/commentary/reuters-open-interest/us-tariff-war-is-fueling-vietnams-coal-boom-2026-10-23/",
+          "published_at": "",
+          "summary": "Gavin Maguire",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "TRADING DAY: Maximum pAIn",
+          "url": "https://www.reuters.com/commentary/reuters-open-interest/global-markets-trading-day-graphic-2026-10-22/",
+          "published_at": "",
+          "summary": "Jamie McGeever",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Cross-asset snapshot: S&P 500 7,623.68 (-0.52%), Nasdaq 25,955.34 (-0.21%), Dow 52,215.16 (-1.23%)",
+          "url": "",
+          "published_at": "Oct 26, 2026 6:50 AM EDT",
+          "summary": "STOXX 638.30 (+0.40%) · FTSE 10,735.58 (+0.42%) · Nikkei 62,189.65 (-0.80%) · HSI 23,211.81 (+0.51%) · US10Y 5.00% (+0.81%) · Brent 114.99 (-1.48%) · Gold 4,014.33 (+0.47%)",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            ".SPX": "7,623.68 (-0.52%)",
+            ".IXIC": "25,955.34 (-0.21%)",
+            ".DJI": "52,215.16 (-1.23%)",
+            ".STOXX": "638.30 (+0.40%)",
+            ".FTSE": "10,735.58 (+0.42%)",
+            ".N225": "62,189.65 (-0.80%)",
+            ".HSI": "23,211.81 (+0.51%)",
+            "US10YT": "5.00% (+0.81%)",
+            "LCOc1_brent": "114.99USD (-1.48%)",
+            "XAU_gold": "4,014.33USD (+0.47%)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cnbc-world",
+      "name": "CNBC · World Markets",
+      "url": "https://www.cnbc.com/world-markets/",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": false,
+      "error": "HTTP 500：抓取失败（Failed to fetch page）",
+      "status_code": 500,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.cnbc.com/world-markets/",
+      "note": "对应文中『带强 Cloudflare 防火墙的平台』一类。Firecrawl 侧应把 proxy 升到 stealth 并加大 wait_for；脚本内置的 proxy 逐级升档重试（basic→auto→stealth）就是为这种情况准备的。",
+      "items": []
+    },
+    {
+      "id": "bloomberg-markets",
+      "name": "Bloomberg · Markets",
+      "url": "https://www.bloomberg.com/markets",
+      "category": "news",
+      "category_name": "一、财经新闻与主流科技/商业媒体",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.bloomberg.com/markets",
+      "note": "实测：/markets 这个 hub 页公开可读，没有撞墙——Top Securities 行情条（S&P 500 / Nasdaq / B500 / US 10 Yr / Crude / FTSE 100 / Gold / Euro / Pound）和十几条带深链的头条都完整取到，只有 Markets Daily newsletter 区块标着 Subscriber Only。结论：抓 hub 页性价比高，点进单篇深度文才会撞付费墙。",
+      "items": [
+        {
+          "title": "Top Securities snapshot: S&P 500 7,623.68 (-0.52%), Nasdaq 25,955.34 (-0.21%)",
+          "url": "https://www.bloomberg.com/quote/SPX:IND",
+          "published_at": "",
+          "summary": "B500 2,758.38 (-0.50%) · US 10 Yr 4.99 (0.00%) · Crude Oil 101.05 (-2.15%) · FTSE 100 10,736.79 (+0.43%) · Gold 4,025.40 (+0.44%) · Euro 1.12 (-0.06%) · Pound/Dollar 1.33 (-0.19%)",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "SPX:IND": "7,623.68 (-0.52%)",
+            "CCMP:IND": "25,955.34 (-0.21%)",
+            "B500:IND": "2,758.38 (-0.50%)",
+            "US_10Yr": "4.99 (0.00%)",
+            "CL1:COM_crude": "101.05 (-2.15%)",
+            "UKX:IND_FTSE100": "10,736.79 (+0.43%)",
+            "GC1:COM_gold": "4,025.40 (+0.44%)",
+            "EURUSD:CUR": "1.12 (-0.06%)",
+            "GBPUSD:CUR": "1.33 (-0.19%)"
+          }
+        },
+        {
+          "title": "Markets Wrap: Stocks Gain Before Tech Earnings as Oil Declines",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-25/us-equity-futures-climb-as-crude-oil-price-dips-markets-wrap",
+          "published_at": "2026-10-25",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Genmab Soars as Cancer Drug Impresses in a Late-Stage Trial",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/genmab-soars-as-cancer-drug-impresses-in-a-late-stage-trial",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "Genmab",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "AI Agents Seen Taking Credit-Trading Work From Humans Over Time",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/ai-agents-seen-taking-credit-trading-work-from-humans-over-time",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "CoreWeave Rout Sends Warning Sign to Rest of the Stock Market",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/coreweave-rout-sends-warning-sign-to-rest-of-the-stock-market",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "CoreWeave",
+          "stock_code": "CRWV:US",
+          "key_metrics": {}
+        },
+        {
+          "title": "French Bond Risk Gauge Falls as Moody's Keeps Rating Stable",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/french-markets-rebound-after-nation-avoids-moody-s-downgrade",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "India Opposition Leader Gandhi Acquitted in Defamation Case",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/india-s-opposition-leader-gandhi-acquitted-in-defamation-case",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "UK Dealers See More Treasury Bills Coming to Cut Debt Costs",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/uk-dealers-see-more-treasury-bills-coming-to-cut-debt-costs",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "French Bond Rout Draws Australia Pension Into Market Others Shun",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/french-bond-oats-australia-pension-australian-retirement-trust-yields-ecb",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Citadel Securities Takes Bigger Office in India Push",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/ken-griffin-s-citadel-securities-to-expand-india-office",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "Citadel Securities",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Uganda Shilling Hits Record Low Even as Central Bank Steps In",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-26/-usd-ugx-shilling-freefall-has-uganda-tapping-meager-reserve-war-chest",
+          "published_at": "2026-10-26",
+          "summary": "",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "Musk Claims $40 Billion Chips Debt Closed, Yet Talks Ongoing",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-25/musk-says-spacex-closed-40-billion-debt-deal-blasts-neoclouds",
+          "published_at": "2026-10-25",
+          "summary": "Most Active 板块条目",
+          "company_name": "SpaceX",
+          "stock_code": "SPCX:US",
+          "key_metrics": {
+            "chips_debt": "$40 Billion"
+          }
+        },
+        {
+          "title": "Netflix Users Are Watching Less, Not Opening the App as Often",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-25/netflix-users-are-watching-less-not-opening-the-app-as-often",
+          "published_at": "2026-10-25",
+          "summary": "Most Active 板块条目",
+          "company_name": "Netflix",
+          "stock_code": "NFLX:US",
+          "key_metrics": {}
+        },
+        {
+          "title": "The Big Take: Affordability Is Splintering the Voter Coalition Trump Built",
+          "url": "https://www.bloomberg.com/features/2026-us-midterm-election-affordability/",
+          "published_at": "2026-10-26",
+          "summary": "Two years later, some of his supporters are disappointed — and that's bad news for Republicans.",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        }
+      ]
+    },
+    {
+      "id": "cninfo-notice",
+      "name": "巨潮资讯网 · 最新公告",
+      "url": "https://www.cninfo.com.cn/new/index",
+      "category": "filings",
+      "category_name": "二、企业财报、研报与公告平台",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.cninfo.com.cn/new/index",
+      "note": "『最新公告』为 HTML <table>，四列（代码/简称/公告标题/日期）完整转成 Markdown 表格，每行标题都带 announcementId 详情页深链——正是文中说的『结合 actions 或 extract 直接解析 HTML 财报』的理想输入。",
+      "items": [
+        {
+          "title": "圣湘生物科技股份有限公司2026年度第一期中期票据发行结果公告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=688289&orgId=nssc1000305&announcementId=1225625772&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "",
+          "company_name": "圣湘生物",
+          "stock_code": "688289",
+          "key_metrics": {}
+        },
+        {
+          "title": "2026年第三次临时董事会会议决议公告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=603273&orgId=gfbj0837134&announcementId=1225625736&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "",
+          "company_name": "天元智能",
+          "stock_code": "603273",
+          "key_metrics": {}
+        },
+        {
+          "title": "董事会薪酬与考核委员会关于2026年限制性股票激励计划相关事项及授予激励对象名单（截至授予日）的核查意见",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=688114&orgId=9900046518&announcementId=1225625770&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "",
+          "company_name": "华大智造",
+          "stock_code": "688114",
+          "key_metrics": {}
+        },
+        {
+          "title": "天奈科技2026年第三季度报告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=688116&orgId=9900038935&announcementId=1225625740&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "定期报告：三季报正文可直接二次 scrape + extract 抽财务指标。",
+          "company_name": "天奈科技",
+          "stock_code": "688116",
+          "key_metrics": {}
+        },
+        {
+          "title": "关于自愿披露与专业投资机构共同投资设立脑智能创业投资基金的公告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=688253&orgId=9900048398&announcementId=1225625767&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "",
+          "company_name": "英诺特",
+          "stock_code": "688253",
+          "key_metrics": {}
+        },
+        {
+          "title": "河南中孚实业股份有限公司关于2025年员工持股计划第一期已解锁部分股份非交易过户完成的公告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=600595&orgId=gssh0600595&announcementId=1225625765&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "",
+          "company_name": "中孚实业",
+          "stock_code": "600595",
+          "key_metrics": {}
+        },
+        {
+          "title": "集友股份2026年第四次临时股东会决议公告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=603429&orgId=9900033051&announcementId=1225625757&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "",
+          "company_name": "*ST集友",
+          "stock_code": "603429",
+          "key_metrics": {}
+        },
+        {
+          "title": "保定天威保变电气股份有限公司2026年第三季度报告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=600550&orgId=gssh0600550&announcementId=1224757&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "定期报告",
+          "company_name": "保变电气",
+          "stock_code": "600550",
+          "key_metrics": {}
+        },
+        {
+          "title": "西南证券股份有限公司关于向专业投资者公开发行科技创新公司债券获得中国证券监督管理委员会注册批复的公告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=600369&orgId=gssh0600369&announcementId=1225625755&announcementTime=2026-10-27",
+          "published_at": "10-27",
+          "summary": "",
+          "company_name": "西南证券",
+          "stock_code": "600369",
+          "key_metrics": {}
+        },
+        {
+          "title": "西部矿业第九届董事会第四次会议决议公告",
+          "url": "https://www.cninfo.com.cn/new/disclosure/detail?stockCode=601168&orgId=9900003262",
+          "published_at": "10-27",
+          "summary": "",
+          "company_name": "西部矿业",
+          "stock_code": "601168",
+          "key_metrics": {}
+        }
+      ]
+    },
+    {
+      "id": "sec-edgar-10q",
+      "name": "SEC EDGAR · Latest 10-Q",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=10-Q&count=40",
+      "category": "filings",
+      "category_name": "二、企业财报、研报与公告平台",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&count=20&type=10-Q",
+      "note": "静态 HTML，最稳的源之一。每条都带 [html]/[text] 两种正文入口 + Accession Number，可再发一次 scrape 抓 10-Q 正文并 extract 营收/利润/资产负债表核心指标。",
+      "items": [
+        {
+          "title": "Atlantis Glory Inc. — 10-Q Quarterly report",
+          "url": "https://www.sec.gov/Archives/edgar/data/1673504/000149315226048350/0001493152-26-048350-index.htm",
+          "published_at": "2026-10-26",
+          "summary": "Accepted 2026-10-26 06:10:54",
+          "company_name": "Atlantis Glory Inc.",
+          "stock_code": "CIK 0001673504",
+          "key_metrics": {
+            "accession_number": "0001493152-26-048350",
+            "size": "2 MB",
+            "file_no": "333-213608"
+          }
+        },
+        {
+          "title": "Ladder Capital Corp — 10-Q Quarterly report",
+          "url": "https://www.sec.gov/Archives/edgar/data/1577670/000157767026000055/0001577670-26-000055-index.htm",
+          "published_at": "2026-10-26",
+          "summary": "Accepted 2026-10-23 17:57:53",
+          "company_name": "Ladder Capital Corp",
+          "stock_code": "CIK 0001577670",
+          "key_metrics": {
+            "accession_number": "0001577670-26-000055",
+            "size": "20 MB",
+            "file_no": "001-36299"
+          }
+        },
+        {
+          "title": "TELEDYNE TECHNOLOGIES INC — 10-Q Quarterly report",
+          "url": "https://www.sec.gov/Archives/edgar/data/1094285/000109428526000059/0001094285-26-000059-index.htm",
+          "published_at": "2026-10-23",
+          "summary": "Accepted 2026-10-23 17:19:18",
+          "company_name": "Teledyne Technologies",
+          "stock_code": "CIK 0001094285",
+          "key_metrics": {
+            "accession_number": "0001094285-26-000059",
+            "size": "9 MB",
+            "file_no": "001-15295"
+          }
+        },
+        {
+          "title": "Five Point Holdings, LLC — 10-Q Quarterly report",
+          "url": "https://www.sec.gov/Archives/edgar/data/1574197/000157419726000035/0001574197-26-000035-index.htm",
+          "published_at": "2026-10-23",
+          "summary": "Accepted 2026-10-23 17:03:44",
+          "company_name": "Five Point Holdings",
+          "stock_code": "CIK 0001574197",
+          "key_metrics": {
+            "accession_number": "0001574197-26-000035",
+            "size": "11 MB",
+            "file_no": "001-38088"
+          }
+        },
+        {
+          "title": "Hilltop Holdings Inc. — 10-Q Quarterly report",
+          "url": "https://www.sec.gov/Archives/edgar/data/1265131/000110465926118492/0001104659-26-118492-index.htm",
+          "published_at": "2026-10-23",
+          "summary": "Accepted 2026-10-23 16:32:13",
+          "company_name": "Hilltop Holdings",
+          "stock_code": "CIK 0001265131",
+          "key_metrics": {
+            "accession_number": "0001104659-26-118492",
+            "size": "40 MB",
+            "file_no": "001-31987"
+          }
+        },
+        {
+          "title": "BADGER METER INC — 10-Q Quarterly report",
+          "url": "https://www.sec.gov/Archives/edgar/data/9092/000119312526430469/0001193125-26-430469-index.htm",
+          "published_at": "2026-10-23",
+          "summary": "Accepted 2026-10-23 16:22:14",
+          "company_name": "Badger Meter",
+          "stock_code": "CIK 0000009092",
+          "key_metrics": {
+            "accession_number": "0001193125-26-430469",
+            "size": "5 MB",
+            "file_no": "001-06706"
+          }
+        },
+        {
+          "title": "BALCHEM CORP — 10-Q Quarterly report",
+          "url": "https://www.sec.gov/Archives/edgar/data/9326/000000932626000035/0000009326-26-000035-index.htm",
+          "published_at": "2026-10-23",
+          "summary": "Accepted 2026-10-23 16:18:30",
+          "company_name": "Balchem Corp",
+          "stock_code": "CIK 0000009326",
+          "key_metrics": {
+            "accession_number": "0000009326-26-000035",
+            "size": "8 MB",
+            "file_no": "001-13648"
+          }
+        },
+        {
+          "title": "KINDER MORGAN, INC. — 10-Q Quarterly report",
+          "url": "https://www.sec.gov/Archives/edgar/data/1506307/000150630726000132/0001506307-26-000132-index.htm",
+          "published_at": "2026-10-23",
+          "summary": "Accepted 2026-10-23 16:18:09",
+          "company_name": "Kinder Morgan",
+          "stock_code": "CIK 0001506307",
+          "key_metrics": {
+            "accession_number": "0001506307-26-000132",
+            "size": "11 MB",
+            "file_no": "001-35081"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mbhj",
+      "name": "迈博汇金 · 研报",
+      "url": "https://www.mbhj.com/",
+      "category": "filings",
+      "category_name": "二、企业财报、研报与公告平台",
+      "ok": false,
+      "error": "ERR_BLOCKED_BY_CLIENT：www.mbhj.com 无法建立连接，返回的页面标题只剩占位符 mbhj.com，正文是浏览器扩展拦截提示",
+      "status_code": null,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.mbhj.com/",
+      "note": "实测该域名已不可达。这正好是文中『各大券商公开研报展示页』一类的现实风险：研报聚合站域名极不稳定，且研报下载本来多需登录。生产上应改用各券商官网的公开研报展示页，并先用 Firecrawl /map 确认路径，不要把聚合站域名硬编码进定时任务。",
+      "items": []
+    },
+    {
+      "id": "xueqiu-today",
+      "name": "雪球 · 今日话题",
+      "url": "https://xueqiu.com/today",
+      "category": "community",
+      "category_name": "三、财经博客、独立分析与知识社区",
+      "ok": true,
+      "error": "",
+      "status_code": 200,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "https://www.xueqiu.com/today",
+      "note": "公开热帖与热股榜都能取到，$股票$ 标记被完整保留成带交易所前缀的代码链接（SH600900 / SZ002466），很适合直接喂给 extract 抽 company_name + stock_code。",
+      "items": [
+        {
+          "title": "这波科技股大幅度回调，融资盘基本爆仓",
+          "url": "https://www.xueqiu.com/5713226795/413819039",
+          "published_at": "昨天 22:26",
+          "summary": "没融资的也被深套；投资不是比谁跑得快，而是比谁活得久，追高的代价市场从来不会手软。",
+          "company_name": "兆易创新 / 中际旭创",
+          "stock_code": "SH603986, SZ300308",
+          "key_metrics": {}
+        },
+        {
+          "title": "今天涨的除了银行、油气和运营商，还有跌到地上的票",
+          "url": "https://www.xueqiu.com/8272025162/413887596",
+          "published_at": "3小时前",
+          "summary": "游戏、白酒、地产、光伏筹码结构较好、接近无人问津；物极必反，主力要少花钱把事办了。前期高潮过的 CPO、PCB、存储、电子元件则回调。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "皇家围场1619一年破3亿，东阿阿胶在下一盘大棋？",
+          "url": "https://www.xueqiu.com/4758339028/413872464",
+          "published_at": "4小时前",
+          "summary": "皇家围场 1619 在 2025 年一年内把发货额从 1 亿元拉升到 3 亿元，同比翻两倍，速度在中药滋补行业里罕见。",
+          "company_name": "东阿阿胶",
+          "stock_code": "SZ000423",
+          "key_metrics": {
+            "shipment_2024": "1亿元",
+            "shipment_2025": "3亿元",
+            "yoy": "+200%"
+          }
+        },
+        {
+          "title": "长江电力的折旧年限与实际使用寿命存在显著差异",
+          "url": "https://www.xueqiu.com/2562702674/413892480",
+          "published_at": "2小时前",
+          "summary": "大坝折旧按 40 年计提但实际可用 100 多年，发电机组折旧 18 年实际可用 40 年以上，因此其折旧与一般公司有很大区别。",
+          "company_name": "长江电力",
+          "stock_code": "SH600900",
+          "key_metrics": {
+            "dam_depreciation_years": "40年",
+            "dam_useful_life": "100+年",
+            "generator_depreciation_years": "18年",
+            "generator_useful_life": "40+年"
+          }
+        },
+        {
+          "title": "太阳底下无新事",
+          "url": "https://www.xueqiu.com/4869811895/413888211",
+          "published_at": "2小时前",
+          "summary": "完整经历过 21-24 年 3700→2600 点的股民对这几个月感觉熟悉：配方一模一样，只是这次下坠更猛。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {}
+        },
+        {
+          "title": "白酒巨大堰塞湖：一场被严重低估的产能过剩",
+          "url": "https://www.xueqiu.com/7808414143/413878800",
+          "published_at": "3小时前",
+          "summary": "规上白酒产量 2016 年达 1358.4 万千升历史顶峰，2025 年回落至 354.9 万千升、连续九年下行，但这仅是每年新增产出，社会库存仍在累积。",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "output_2016_peak": "1358.4万千升",
+            "output_2025": "354.9万千升",
+            "consecutive_decline_years": "9年"
+          }
+        },
+        {
+          "title": "生益科技又跌到对2027年15pe左右",
+          "url": "https://www.xueqiu.com/8780033408/413897131",
+          "published_at": "2小时前",
+          "summary": "历史上多数时间 PE 在 20 以上，因管理层长期股东回报特别高、利润基本都分了；关键在于对长期 AI 发展的判断。",
+          "company_name": "生益科技",
+          "stock_code": "SH600183",
+          "key_metrics": {
+            "forward_pe_2027": "约15x",
+            "historical_pe_band": "20x以上"
+          }
+        },
+        {
+          "title": "胜宏科技：Q3 已经不重要了",
+          "url": "https://www.xueqiu.com/7735309234/413844690",
+          "published_at": "6小时前",
+          "summary": "认为 22 亿传闻不实；从 Q4 开始业绩将重新高度增长，明年产能有望达千亿级，关注厂 4 及厂 10、11 的投产节奏。",
+          "company_name": "胜宏科技",
+          "stock_code": "SZ300476",
+          "key_metrics": {}
+        },
+        {
+          "title": "英维克三季报简评",
+          "url": "https://www.xueqiu.com/5672579962/413904366",
+          "published_at": "56分钟前",
+          "summary": "液冷三剑客（英维克+申菱环境+飞龙股份）之一；台系液冷吃 Blackwell 第一席，A 股液冷板块吃 Vera Rubin 第二席，VR200 四季度开始上量。",
+          "company_name": "英维克",
+          "stock_code": "SZ002837",
+          "key_metrics": {}
+        },
+        {
+          "title": "以三分式估值法拆解巴菲特买入和卖出苹果的全过程",
+          "url": "https://www.xueqiu.com/7368170779/413865175",
+          "published_at": "4小时前",
+          "summary": "以 2016 财年末为估值时点做保守口径测算：现金及等价物、短期与长期有价证券合计约 2376 亿美元作为资产价值。",
+          "company_name": "Apple",
+          "stock_code": "AAPL",
+          "key_metrics": {
+            "cash_and_securities_fy2016": "约2376亿美元"
+          }
+        },
+        {
+          "title": "从宁德时代和亿纬锂能的业绩来看，锂电池明年依旧高速增长",
+          "url": "https://www.xueqiu.com/4349234094/413847507",
+          "published_at": "6小时前",
+          "summary": "宁德明年产能估摸 30% 左右增长、亿纬锂能约 50%，两大头部扩产侧面反映锂电池不会过剩，行业增速预期 25—35%，关键看储能动量。",
+          "company_name": "宁德时代 / 亿纬锂能",
+          "stock_code": "SZ300750, SZ300014",
+          "key_metrics": {
+            "catl_capacity_growth_2027e": "约30%",
+            "eve_capacity_growth_2027e": "约50%",
+            "industry_growth_range": "25%—35%"
+          }
+        },
+        {
+          "title": "热股榜（1小时内最热）",
+          "url": "https://www.xueqiu.com/hq#hot",
+          "published_at": "",
+          "summary": "药明康德 +0.88% · 东山精密 -7.70% · 宇树科技-W +7.69% · 国电电力 +3.41% · 华正新材 -10.00% · 英维克 -3.18% · 中际旭创 -2.96%",
+          "company_name": "",
+          "stock_code": "",
+          "key_metrics": {
+            "SH603259_药明康德": "+0.88%",
+            "SZ002384_东山精密": "-7.70%",
+            "SH688836_宇树科技-W": "+7.69%",
+            "SH600795_国电电力": "+3.41%",
+            "SH603186_华正新材": "-10.00%",
+            "SZ002837_英维克": "-3.18%",
+            "SZ300308_中际旭创": "-2.96%"
+          }
+        }
+      ]
+    },
+    {
+      "id": "seekingalpha-market-news",
+      "name": "Seeking Alpha · Market News",
+      "url": "https://seekingalpha.com/market-news",
+      "category": "community",
+      "category_name": "三、财经博客、独立分析与知识社区",
+      "ok": false,
+      "error": "本次手工抓取未覆盖（沙箱网络白名单未放行）",
+      "status_code": null,
+      "proxy_used": null,
+      "scrape_id": null,
+      "elapsed_s": 0.0,
+      "fetched_url": "",
+      "note": "文中定位：对无高强度付费墙的公开文章抓取成功率极高，适合构建 RAG 知识库。用 Firecrawl 跑时建议 location=US + proxy=auto，并只取 market-news 列表页，深度分析文有付费墙。",
+      "items": []
+    }
+  ]
+}

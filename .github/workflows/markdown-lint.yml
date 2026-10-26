@@ -1,0 +1,194 @@
+name: Lint Markdown
+
+# Two different questions, deliberately kept in separate jobs:
+#
+#   1. "Did THIS pull request make the markdown worse?"  -> job `changed`
+#   2. "Is the default branch's markdown clean?"          -> job `full`
+#
+# The split matters because the repository currently carries a backlog: 304
+# findings across 43 files as of 2026-10-26. Linting the whole tree on every
+# pull request would fail PRs that touch a single unrelated file, which teaches
+# people to ignore the check. So PRs are gated on the markdown they actually
+# changed, while the backlog is surfaced on main and on a schedule — where a
+# failure hands off to the AI remediation workflow instead of blocking
+# somebody's feature work.
+
+on:
+  pull_request:
+    paths:
+      - "**.md"
+      - ".hallmarkrc"
+      - ".github/scripts/hallmark-markdown-scan.mjs"
+      - ".github/scripts/hallmark-markdown-scan.test.mjs"
+      - ".github/workflows/markdown-lint.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "**.md"
+      - ".hallmarkrc"
+      - ".github/scripts/hallmark-markdown-scan.mjs"
+      - ".github/workflows/markdown-lint.yml"
+  schedule:
+    # 07:15 UTC every Monday. Off-the-hour on purpose: the top of the hour is
+    # when every other cron workflow in the org fires.
+    - cron: "15 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: markdown-lint-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Pinned: hallmark is the source of truth for markdown style here, and a
+  # surprise minor bump changing the rule set would fail PRs it did not cause.
+  HALLMARK_VERSION: "5.0.2"
+
+jobs:
+  changed:
+    name: Lint markdown changed in this PR
+    if: github.event_name == 'pull_request'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # Full history: the scanner needs `git merge-base` against the PR's
+          # base to work out which markdown files this PR touched.
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Install hallmark
+        run: |
+          set -euo pipefail
+          # Installed outside the checkout on purpose: the repository has no root
+          # package.json to hang a devDependency on, and keeping the tool out of
+          # the working tree means `git status` stays clean.
+          npm install --prefix /tmp/hallmark-tool --no-audit --no-fund "hallmark@${HALLMARK_VERSION}"
+          echo "HALLMARK_MODULE=/tmp/hallmark-tool/node_modules/hallmark/index.js" >> "$GITHUB_ENV"
+
+      - name: Lint changed markdown
+        id: scan
+        env:
+          # Via env rather than interpolated straight into the script: the value
+          # is a commit SHA so it is not attacker-controlled, but keeping
+          # expressions out of `run` blocks is the habit that prevents the cases
+          # where they are.
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set +e
+          node .github/scripts/hallmark-markdown-scan.mjs \
+            --no-fix \
+            --frail \
+            --scope changed \
+            --base-ref "$BASE_REF"
+          code=$?
+          # Record the code so the steps below can tell "your markdown has
+          # violations" (1) apart from "the linter could not run" (2).
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Explain a style failure
+        if: failure() && steps.scan.outputs.exit_code == '1'
+        run: |
+          echo "::error::This PR introduces Markdown style violations."
+          echo "Most are mechanical. Reproduce and fix locally with:"
+          echo "  npm install --prefix /tmp/hallmark-tool hallmark@${HALLMARK_VERSION}"
+          echo "  /tmp/hallmark-tool/node_modules/.bin/hallmark fix '**/*.md'"
+          echo "Then re-run: node .github/scripts/hallmark-markdown-scan.mjs --no-fix --scope changed --base-ref <base-sha>"
+          echo "Only the markdown this PR changed is checked, so pre-existing findings elsewhere do not fail it."
+
+      - name: Explain a tooling failure
+        # Deliberately separate from the step above. Telling a contributor their
+        # prose is unlintable when npm actually failed to fetch hallmark sends
+        # them chasing a problem that does not exist — and a registry 404 on a
+        # transitive dependency is not hypothetical, it happens.
+        if: failure() && steps.scan.outputs.exit_code == '2'
+        run: |
+          echo "::error::The Markdown linter could not run. This is a tooling failure, not a problem with your Markdown."
+          echo "Usual causes:"
+          echo "  - npm could not install hallmark@${HALLMARK_VERSION} (registry outage, or a missing transitive tarball)"
+          echo "  - the checkout has no GitHub origin remote, which hallmark needs to resolve its git host"
+          echo "Re-run the job. If it fails again, the install step log has the real error."
+
+  full:
+    name: Lint all markdown on the default branch
+    if: github.event_name != 'pull_request'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Install hallmark
+        run: |
+          set -euo pipefail
+          npm install --prefix /tmp/hallmark-tool --no-audit --no-fund "hallmark@${HALLMARK_VERSION}"
+          echo "HALLMARK_MODULE=/tmp/hallmark-tool/node_modules/hallmark/index.js" >> "$GITHUB_ENV"
+
+      - name: Lint every markdown file
+        id: scan
+        # No token is passed here on purpose. Without one the scanner skips the
+        # open-PR marker lookup, so this job makes no API calls and reports the
+        # raw state of the tree. Deduping against in-flight remediation PRs is
+        # the remediation workflow's job, where it actually changes behaviour.
+        run: |
+          set +e
+          node .github/scripts/hallmark-markdown-scan.mjs --no-fix --frail
+          code=$?
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Flag a tooling failure
+        if: failure() && steps.scan.outputs.exit_code == '2'
+        run: |
+          echo "::error::The Markdown linter could not run, so this result says nothing about the tree."
+          echo "Check the install step for an npm or git-remote error, then re-run."
+
+      - name: Upload findings
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: markdown-lint-findings
+          path: /tmp/hallmark-markdown/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "### Markdown lint"
+            echo ""
+            echo "| | count |"
+            echo "| --- | --- |"
+            echo "| files scanned | all \`**/*.md\` |"
+            echo "| findings | ${{ steps.scan.outputs.total_findings }} |"
+            echo "| files affected | ${{ steps.scan.outputs.files_with_findings }} |"
+            echo "| mechanical (\`hallmark fix\` handles these) | see remediation workflow |"
+            echo ""
+            if [ "${{ steps.scan.outputs.exit_code }}" = "2" ]; then
+              echo "⚠️ The linter could not run. These counts are not meaningful."
+            elif [ "${{ steps.scan.outputs.has_findings }}" = "true" ]; then
+              echo "Findings remain on \`${GITHUB_REF_NAME}\`. The *Markdown Lint AI"
+              echo "Remediation* workflow picks this failure up, applies \`hallmark fix\`,"
+              echo "and asks the model to settle what needs a judgement call."
+            else
+              echo "Clean."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
