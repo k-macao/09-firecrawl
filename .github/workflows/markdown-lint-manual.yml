@@ -23,6 +23,19 @@ name: Markdown Lint (Manual)
 # `fix` and `ai` overlap: the AI remediation also applies `hallmark fix` before
 # the model starts. Use `fix` when you want the deterministic 74% now and the
 # judgement calls later; do not open both against the same tree at once.
+#
+# `notify_wechat` additionally pushes the outcome to WeChat through PushPlus,
+# using .github/scripts/pushplus-notify.mjs. Two things worth knowing:
+#
+#   - It requires the PUSHPLUS_TOKEN repository secret, and the push is passed
+#     --required, so a missing token or a rejected push fails the job. That is a
+#     deliberate narrowing of "report never fails": report never fails *because
+#     of what the linter found*, but if you explicitly asked for a WeChat
+#     delivery and it did not happen, a green run would be the wrong answer.
+#   - Success is decided by the response body's `code`, not the HTTP status.
+#     PushPlus answers HTTP 200 for a rejected push, so a `curl --fail` step
+#     would report success while nothing was ever delivered. The script exists
+#     to make that check shared and tested rather than re-derived per workflow.
 
 on:
   workflow_dispatch:
@@ -43,6 +56,10 @@ on:
         description: "fix mode only: open a PR with the mechanical fixes. Off applies them, reports the diff, then discards it"
         type: boolean
         default: true
+      notify_wechat:
+        description: "report/fix modes: also push the result to WeChat via PushPlus. Needs the PUSHPLUS_TOKEN secret"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -135,6 +152,53 @@ jobs:
               echo "classification; \`claude-prompt.md\` is what the model would be asked to do."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push the report to WeChat
+        if: ${{ inputs.notify_wechat }}
+        env:
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          MODE_PATHS: ${{ inputs.paths }}
+          TOTAL: ${{ steps.scan.outputs.total_findings }}
+          FILES: ${{ steps.scan.outputs.files_with_findings }}
+          JUDGEMENT: ${{ steps.scan.outputs.remaining_findings }}
+          COVERED: ${{ steps.scan.outputs.covered_findings }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FINDINGS_JSON: /tmp/hallmark-markdown/findings-after.json
+        run: |
+          set -euo pipefail
+
+          # Every value reaches the shell through env, never by interpolating an
+          # input into the command line.
+          BODY_FILE="$(mktemp)"
+          {
+            echo "<h3>Markdown lint report</h3>"
+            echo "<table border='1' cellpadding='4' cellspacing='0'>"
+            echo "<tr><td>scope</td><td><code>${MODE_PATHS:-**/*.md}</code></td></tr>"
+            echo "<tr><td>findings</td><td><b>${TOTAL}</b></td></tr>"
+            echo "<tr><td>files affected</td><td>${FILES}</td></tr>"
+            echo "<tr><td>needing judgement</td><td>${JUDGEMENT}</td></tr>"
+            echo "<tr><td>covered by an open PR</td><td>${COVERED}</td></tr>"
+            echo "</table>"
+
+            # The findings file is only there if the scan got far enough to write
+            # it, so guard before handing it to jq.
+            if [ -s "$FINDINGS_JSON" ]; then
+              echo "<h4>Top rules</h4>"
+              echo "<table border='1' cellpadding='4' cellspacing='0'>"
+              echo "<tr><th>rule</th><th>total</th><th>needs judgement</th></tr>"
+              jq -r "group_by(.rule) | map({rule: .[0].rule, n: length, j: (map(select(.kind == \"judgement\")) | length)}) | sort_by(-.n) | .[:8][] | \"<tr><td><code>\(.rule)</code></td><td>\(.n)</td><td>\(.j)</td></tr>\"" "$FINDINGS_JSON"
+              echo "</table>"
+            fi
+
+            echo "<p><a href='${RUN_URL}'>View the run</a> — the artifact has every"
+            echo "finding with file, line and rule.</p>"
+          } > "$BODY_FILE"
+
+          node .github/scripts/pushplus-notify.mjs \
+            --title "Markdown lint: ${TOTAL} finding(s) in ${FILES} file(s)" \
+            --content-file "$BODY_FILE" \
+            --template html \
+            --required
 
   fix:
     name: Apply mechanical fixes
@@ -311,6 +375,54 @@ jobs:
             echo "*after* the fixer normalised the surrounding markup. The arithmetic"
             echo "checks out as \`before - resolved + surfaced == remaining\`."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push the result to WeChat
+        if: ${{ inputs.notify_wechat }}
+        env:
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          MODE_PATHS: ${{ inputs.paths }}
+          TOTAL: ${{ steps.scan.outputs.total_findings }}
+          RESOLVED: ${{ steps.scan.outputs.auto_fixed }}
+          SURFACED: ${{ steps.scan.outputs.surfaced_by_fix }}
+          REMAINING: ${{ steps.scan.outputs.remaining_findings }}
+          FILES_CHANGED: ${{ steps.pr.outputs.files_changed }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+          OPEN_PR: ${{ inputs.open_pr }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          BODY_FILE="$(mktemp)"
+          {
+            echo "<h3>Markdown mechanical fixes</h3>"
+            echo "<table border='1' cellpadding='4' cellspacing='0'>"
+            echo "<tr><td>scope</td><td><code>${MODE_PATHS:-**/*.md}</code></td></tr>"
+            echo "<tr><td>findings before</td><td>${TOTAL}</td></tr>"
+            echo "<tr><td>resolved by the fixer</td><td><b>${RESOLVED}</b></td></tr>"
+            echo "<tr><td>surfaced by the fixer</td><td>${SURFACED}</td></tr>"
+            echo "<tr><td>still needing judgement</td><td>${REMAINING}</td></tr>"
+            echo "<tr><td>files changed</td><td>${FILES_CHANGED:-0}</td></tr>"
+            echo "</table>"
+
+            if [ -n "$PR_URL" ]; then
+              echo "<p>PR: <a href='${PR_URL}'>${PR_URL}</a></p>"
+              echo "<p>No model was involved — the diff is deterministic fixer"
+              echo "output, so it is safe to review as formatting only.</p>"
+            elif [ "$OPEN_PR" = "false" ]; then
+              echo "<p><code>open_pr</code> was off: the fixes were applied, measured,"
+              echo "then discarded with the runner. Nothing was pushed.</p>"
+            else
+              echo "<p>The fixer produced no changes for this scope.</p>"
+            fi
+
+            echo "<p><a href='${RUN_URL}'>View the run</a></p>"
+          } > "$BODY_FILE"
+
+          node .github/scripts/pushplus-notify.mjs \
+            --title "Markdown fixes: ${RESOLVED} resolved, ${REMAINING} left" \
+            --content-file "$BODY_FILE" \
+            --template html \
+            --required
 
   ai:
     name: Hand off to AI remediation

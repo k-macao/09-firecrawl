@@ -28,6 +28,41 @@ python finance_digest.py               # ③ 确认没问题，正式推送
 > **PushPlus 前置条件**：到 <https://www.pushplus.plus/> 微信扫码登录，复制首页的「用户 token」，
 > 并**关注公众号「pushplus推送加」**——没关注的话 `channel=wechat` 发不出去。
 
+### 在 GitHub Actions 里跑（手动触发）
+
+本地环境如果连不到 `api.firecrawl.dev` 或 `www.pushplus.plus`（受限网络、代理、出网白名单），
+抓取和推送都做不成，而 GitHub runner 两个域名都通。仓库为此提供了
+`.github/workflows/finance-digest-pushplus.yml`，**只支持手动触发**，没有定时任务：
+
+```bash
+# 先设置两个 secret（FIRECRAWL_API_KEY 仓库里其他 workflow 已在用）
+gh secret set FIRECRAWL_API_KEY --repo <owner>/<repo>
+gh secret set PUSHPLUS_TOKEN    --repo <owner>/<repo>
+
+# 干跑：抓取 + 落盘 + 上传 artifact，但不推微信
+gh workflow run "Finance Digest to WeChat" -f dry_run=true
+
+# 正式跑：抓取并推送到微信
+gh workflow run "Finance Digest to WeChat"
+
+# 只抓两个源，省额度
+gh workflow run "Finance Digest to WeChat" -f only=wallstreetcn-live,yicai-news
+```
+
+产物（`digest-<日期>.json` / `.md` / `.html` / `.pushed.html` / `preview.html`）会作为
+artifact `finance-digest-<run id>` 上传，保留 14 天。想在不重复花额度的前提下把某一次
+抓取结果再推一遍，下载 artifact 后本地执行：
+
+```bash
+python finance_digest.py --from-json output/digest-<日期>.json
+```
+
+`--from-json` 这条路径不需要 `FIRECRAWL_API_KEY`，只需要 `PUSHPLUS_TOKEN`。
+
+> **注意**：推送成功与否看的是响应体里的 `code == 200`，不是 HTTP 状态码 —— PushPlus 对
+> 被拒绝的推送同样返回 HTTP 200。CI 里的判断由 `.github/scripts/pushplus-notify.mjs` 统一
+> 负责（有单元测试覆盖），`curl --fail` 那种写法会把失败当成成功。
+
 ---
 
 ## 抓取源

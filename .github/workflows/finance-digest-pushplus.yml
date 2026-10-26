@@ -1,0 +1,187 @@
+name: Finance Digest to WeChat
+
+# Manually dispatched run of examples/finance-digest-pushplus: scrape the
+# configured finance sources with Firecrawl, render the digest, and push it to
+# WeChat through PushPlus.
+#
+# This exists because the digest cannot be pushed from a local sandbox that has
+# no route to api.firecrawl.dev or www.pushplus.plus, while a GitHub runner has
+# both. It is deliberately dispatch-only: the digest is a one-shot manual
+# artefact, so there is no schedule and nothing runs on push or pull request.
+#
+# Secrets (both already used elsewhere in this repository, except PUSHPLUS_TOKEN):
+#   FIRECRAWL_API_KEY   required — the scrape cannot run without it
+#   PUSHPLUS_TOKEN      required unless dry_run is on
+#
+# A real run spends Firecrawl credits on up to 14 sources. Use dry_run to scrape
+# and inspect the artefact without pushing, and `only` to narrow the scrape.
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: >-
+          Comma-separated source ids to scrape, e.g. wallstreetcn-live,yicai-news —
+          leave blank for all 14
+        type: string
+        default: ""
+      dry_run:
+        description: "Scrape and build the digest but skip the WeChat push"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Serialise runs so two dispatches cannot push the same digest to WeChat twice.
+concurrency:
+  group: finance-digest-pushplus-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DIGEST_DIR: examples/finance-digest-pushplus
+
+jobs:
+  digest:
+    name: Scrape, render and push
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 30
+
+    env:
+      # Booleans only. Comparing a secret to '' is evaluated by Actions and never
+      # exposes the value, and unlike `gh secret list` it needs no
+      # administration:read permission — this job holds contents:read only.
+      HAS_FIRECRAWL_KEY: ${{ secrets.FIRECRAWL_API_KEY != '' }}
+      HAS_PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN != '' }}
+      ONLY_SOURCES: ${{ inputs.only }}
+      DRY_RUN: ${{ inputs.dry_run }}
+
+    steps:
+      - name: Check the required secrets are present
+        run: |
+          set -euo pipefail
+
+          # Failing here costs one second; failing later costs a Python install
+          # and a full scrape of up to 14 sources before the push is rejected.
+          missing=0
+          if [ "$HAS_FIRECRAWL_KEY" != "true" ]; then
+            echo "::error::FIRECRAWL_API_KEY is not set. The scrape cannot run without it."
+            echo "   Set it with: gh secret set FIRECRAWL_API_KEY --repo ${GITHUB_REPOSITORY}"
+            missing=1
+          fi
+          if [ "$DRY_RUN" != "true" ] && [ "$HAS_PUSHPLUS_TOKEN" != "true" ]; then
+            echo "::error::PUSHPLUS_TOKEN is not set, so the digest could be built but not delivered."
+            echo "   Set it with: gh secret set PUSHPLUS_TOKEN --repo ${GITHUB_REPOSITORY}"
+            echo "   Or re-run with dry_run=true to scrape without pushing."
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+          echo "Secrets present. dry_run=${DRY_RUN}, only='${ONLY_SOURCES:-<all sources>}'"
+
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: ${{ env.DIGEST_DIR }}/requirements.txt
+
+      - name: Install dependencies
+        working-directory: ${{ env.DIGEST_DIR }}
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Scrape, render and push
+        id: digest
+        working-directory: ${{ env.DIGEST_DIR }}
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+        run: |
+          set -uo pipefail
+          # The runner's default shell is `bash -e {0}`, and `-e` would abort
+          # this step the moment finance_digest.py exits non-zero — before the
+          # code below could record the exit code and explain which of the four
+          # documented failure modes happened. Turn it off explicitly, matching
+          # how markdown-lint.yml captures its scanner's exit code.
+          set +e
+
+          # Built as an array so a source list containing spaces or shell
+          # metacharacters stays a single argument. ONLY_SOURCES comes from a
+          # workflow input, so it is read from the environment and never
+          # interpolated into the command line.
+          ARGS=()
+          if [ -n "${ONLY_SOURCES}" ]; then
+            ARGS+=(--only "${ONLY_SOURCES}")
+          fi
+          if [ "${DRY_RUN}" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+
+          python finance_digest.py ${ARGS[@]+"${ARGS[@]}"}
+          CODE=$?
+          echo "exit_code=${CODE}" >> "$GITHUB_OUTPUT"
+
+          if [ "${CODE}" -ne 0 ]; then
+            case "${CODE}" in
+              1)
+                echo "::error::PushPlus rejected the push, or the request could not be completed."
+                echo "   The digest was still built; download the artefact to inspect it."
+                ;;
+              2)
+                echo "::error::finance_digest.py could not run: FIRECRAWL_API_KEY missing, or an input file was unreadable."
+                ;;
+              3)
+                echo "::error::finance_digest.py built the digest but PUSHPLUS_TOKEN was missing at push time."
+                ;;
+              *)
+                echo "::error::finance_digest.py exited with ${CODE}."
+                ;;
+            esac
+            exit "${CODE}"
+          fi
+
+      - name: Upload the digest artefact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: finance-digest-${{ github.run_id }}
+          path: ${{ env.DIGEST_DIR }}/output/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Summarise
+        if: always()
+        env:
+          DIGEST_EXIT: ${{ steps.digest.outputs.exit_code }}
+        run: |
+          {
+            echo "### Finance digest"
+            echo ""
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| scope | \`${ONLY_SOURCES:-all 14 sources}\` |"
+            echo "| push to WeChat | $([ "${DRY_RUN}" = "true" ] && echo "skipped (dry_run)" || echo "attempted") |"
+            echo "| exit code | ${DIGEST_EXIT:-n/a} |"
+            echo "| artefact | \`finance-digest-${GITHUB_RUN_ID}\` |"
+            echo ""
+            echo "The artefact contains \`digest-<date>.json\` (the raw scrape), \`.md\` and"
+            echo "\`.html\` renderings, \`.pushed.html\` (the exact bytes WeChat receives, after"
+            echo "size clamping) and \`preview.html\` (a phone-frame preview)."
+            echo ""
+            if [ "${DRY_RUN}" = "true" ]; then
+              echo "Re-run with \`dry_run\` off to push this digest, or re-scrape for fresher"
+              echo "content. Pushing the already-scraped JSON without spending more credits:"
+              echo ""
+              echo "\`\`\`bash"
+              echo "python finance_digest.py --from-json output/digest-<date>.json"
+              echo "\`\`\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
