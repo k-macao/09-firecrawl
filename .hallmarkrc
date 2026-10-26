@@ -1,0 +1,28 @@
+{
+  "$comment": [
+    "hallmark configuration — https://github.com/vweevers/hallmark",
+    "",
+    "`files` matters more than it looks: hallmark's built-in default is the",
+    "non-recursive glob \"*.md\", so a bare `hallmark lint` at the repo root",
+    "silently checks only the five top-level documents and reports the",
+    "repository as almost clean. Pinning \"**/*.md\" here makes the default",
+    "invocation cover the whole tree, which is what CI and contributors expect.",
+    "",
+    "`ignore` is defensive only. Every one of the 98 markdown files tracked in",
+    "git is authored prose that should be linted; the patterns below cover",
+    "build output and local virtualenvs that are gitignored but may exist in a",
+    "developer's working tree. Do not add authored documentation here to make a",
+    "lint failure go away — that is what the remediation workflow is for."
+  ],
+  "files": ["**/*.md"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/.turbo/**",
+    "**/coverage/**",
+    "**/venv/**",
+    "**/.venv/**"
+  ]
+}

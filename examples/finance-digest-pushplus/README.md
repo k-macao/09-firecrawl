@@ -191,12 +191,29 @@ python finance_digest.py --from-json output/digest-2026-10-26.json --title "财�
 不花额度、不联网，验证解析、语言路由、JSON 往返、限长不变式和 PushPlus 请求体：
 
 ```bash
-python selftest.py       # 63 项断言
+python selftest.py       # 78 项断言
 ```
 
 覆盖的是那些「跑一次真实抓取要花额度、错了才知道」的逻辑，包括：
 限长后 HTML 标签必须闭合、分类标题永不被丢弃、`<script>` 必须转义、
 请求体字段名必须与官方接口一致。
+
+其中 15 项锁住 Markdown 的排版契约，因为仓库用 [hallmark](https://github.com/vweevers/hallmark)
+做 Markdown CI（见根目录 `.hallmarkrc` 与 `.github/workflows/markdown-lint.yml`）。
+产物必须天生合规，而不是每次靠 CI 重写一遍：
+
+- URL 一律渲染成自动链接 `<https://…>`，不留裸 URL（`remark-lint:no-literal-urls`）
+- 散文里的 `_` 与 `[` `]` 要转义，行内代码内部保持原样——指标键名如
+  `q3_revenue`、`wait_for` 满是下划线，不转义会被当成强调或引用链接
+- 文件以且仅以一个换行结尾（`remark-lint:final-newline`）
+- `###` 标题后必须空一行，否则 remark 会把标题下的列表与后面的有序列表并成一个
+- 嵌套项缩进跟随有序标记宽度：`1.` 下缩进 3 空格，`10.` 下必须缩进 4 空格。
+  固定 3 空格会让两位数序号下的子项被判成同级新列表，整片报
+  `list-item-bullet-indent`
+
+这些断言抓到过一个真实缺陷：`collector == "firecrawl"` 分支里的
+`firecrawl_api_url` 一直是裸 URL。手工抓取那份产物走的是另一个分支，
+所以仓库里那份 Markdown 在 CI 下始终干净，缺陷永远不会被发现。
 
 ---
 
@@ -206,7 +223,7 @@ python selftest.py       # 63 项断言
 examples/finance-digest-pushplus/
 ├── finance_digest.py     一次性抓取 → 渲染 → 推送
 ├── sources.json          财经源清单 + 每源的 Firecrawl 抓取参数 + 中英文 extract prompt
-├── selftest.py           离线自检（63 项）
+├── selftest.py           离线自检（78 项）
 ├── requirements.txt
 ├── .env.example
 └── output/               产物（含一份真实抓取的示例摘要）

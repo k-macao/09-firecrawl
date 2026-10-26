@@ -412,14 +412,54 @@ def _group_by_category(digest: Digest) -> Dict[str, List[SourceResult]]:
     return grouped
 
 
+_CODE_SPAN_RE = re.compile(r"(`[^`]*`)")
+
+
+def _md_text(text) -> str:
+    """转义散文中的下划线，产出 hallmark 认可的 Markdown。
+
+    未转义的 `_` 会被 remark 解析成强调或引用定义，从而触发
+    remark-lint:no-undefined-references / emphasis-marker；本项目的指标键名
+    （q3_revenue、wait_for 之类）满是下划线，必须转义。
+    方括号同理：`[html]` 这种写法会被 remark 当成快捷引用链接，找不到定义就报
+    remark-lint:no-undefined-references，所以散文里的 `[`/`]` 也要转义。
+    行内代码 `...` 内部原样保留——那里是标识符，不是排版。
+    """
+    parts = _CODE_SPAN_RE.split(str(text or ""))
+    out_parts: List[str] = []
+    for i, part in enumerate(parts):
+        if i % 2 == 1:  # 代码片段，原样保留
+            out_parts.append(part)
+            continue
+        escaped = part.replace("_", "\\_")
+        escaped = escaped.replace("[", "\\[").replace("]", "\\]")
+        out_parts.append(escaped)
+    return "".join(out_parts)
+
+
+def _md_url(url: str) -> str:
+    """把 URL 渲染成 Markdown 自动链接（<...>）。
+
+    裸 URL 会被 remark-lint:no-literal-urls 判为不规范，且部分渲染器会截断
+    带中文/括号的路径。自动链接在 GitHub 与多数渲染器里都稳定可点。
+    非 http(s) 的东西（例如失败原因里的片段）退回行内代码，不参与链接解析。
+    """
+    u = (url or "").strip()
+    if not u:
+        return ""
+    if u.startswith(("http://", "https://")):
+        return f"<{u}>"
+    return f"`{u}`"
+
+
 def render_markdown(digest: Digest) -> str:
     out: List[str] = []
     out.append(f"# 财经资讯摘要 · {digest.date_label}")
     out.append("")
     origin = (
-        f"Firecrawl {digest.firecrawl_api_url}"
+        f"Firecrawl {_md_url(digest.firecrawl_api_url)}"
         if digest.collector == "firecrawl"
-        else f"采集方式：{digest.collector}"
+        else f"采集方式：{_md_text(digest.collector)}"
     )
     out.append(
         f"> 抓取时间 {digest.generated_at} ｜ 源 {len(digest.ok_sources)}/{len(digest.results)} 成功"
@@ -433,32 +473,41 @@ def render_markdown(digest: Digest) -> str:
         for r in results:
             if not r.ok:
                 out.append(f"### ❌ {r.spec.name}")
-                out.append(f"- 抓取失败：{r.error}")
-                out.append(f"- 源地址：{r.spec.url}")
+                # 标题与列表之间必须空一行，否则 remark 会把两个列表并成一个，
+                # 进而把嵌套项的缩进判成 list-item-bullet-indent 违规
+                out.append("")
+                out.append(f"- 抓取失败：{_md_text(r.error)}")
+                out.append(f"- 源地址：{_md_url(r.spec.url)}")
                 for note in (r.note, r.spec.note):
                     if note:
-                        out.append(f"- 备注：{note}")
+                        out.append(f"- 备注：{_md_text(note)}")
                 out.append("")
                 continue
 
             out.append(f"### {r.spec.name} （{len(r.items)} 条）")
+            out.append("")
             if r.spec.scenario:
-                out.append(f"*{r.spec.scenario}*")
+                # hallmark 约定 emphasis 用 _，不用 *
+                out.append(f"_{_md_text(r.spec.scenario)}_")
             if r.fetched_url and r.fetched_url != r.spec.url:
-                out.append(f"- 实际抓取地址：{r.fetched_url}")
+                out.append(f"- 实际抓取地址：{_md_url(r.fetched_url)}")
             if r.note:
-                out.append(f"- 备注：{r.note}")
+                out.append(f"- 备注：{_md_text(r.note)}")
             out.append("")
 
             if r.items:
                 for i, it in enumerate(r.items, 1):
-                    title = it.title.strip() or "(无标题)"
+                    title = _md_text(it.title.strip() or "(无标题)")
                     head = f"{i}. **{title}**"
                     if it.published_at:
                         head += f" · `{it.published_at}`"
                     out.append(head)
+                    # 嵌套项必须缩进到有序标记的内容列：`1. ` 是 3 列，`10. ` 是 4 列。
+                    # 固定 3 空格会让两位数序号下的子项被 remark 判成同级新列表，
+                    # 从而整片报 list-item-bullet-indent。
+                    pad = " " * (len(str(i)) + 2)
                     if it.summary:
-                        out.append(f"   - {it.summary}")
+                        out.append(f"{pad}- {_md_text(it.summary)}")
                     tag_bits: List[str] = []
                     if it.company_name:
                         tag_bits.append(it.company_name)
@@ -468,9 +517,9 @@ def render_markdown(digest: Digest) -> str:
                     if metrics:
                         tag_bits.append(metrics)
                     if tag_bits:
-                        out.append(f"   - {' ｜ '.join(tag_bits)}")
+                        out.append(f"{pad}- {_md_text(' ｜ '.join(tag_bits))}")
                     if it.url:
-                        out.append(f"   - 原文：{it.url}")
+                        out.append(f"{pad}- 原文：{_md_url(it.url)}")
                 out.append("")
             else:
                 md = (r.markdown or "").strip()
@@ -492,8 +541,9 @@ def render_markdown(digest: Digest) -> str:
         out.append("")
 
     out.append("---")
-    out.append("*由 Firecrawl 抓取并结构化提取，经 PushPlus 推送到微信。*")
-    return "\n".join(out)
+    out.append("_由 Firecrawl 抓取并结构化提取，经 PushPlus 推送到微信。_")
+    # 结尾必须带换行：remark-lint:final-newline，且 POSIX 文本文件惯例如此
+    return "\n".join(out) + "\n"
 
 
 _HTML_WRAPPER_OPEN = (

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import html.parser
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
@@ -27,6 +28,8 @@ from finance_digest import (  # noqa: E402
     SourceResult,
     SourceSpec,
     _blen,
+    _md_text,
+    _md_url,
     clamp_html,
     load_sources,
     pick_prompt,
@@ -178,6 +181,69 @@ check("重定向地址不串进正文", "a.example/redirected" not in full)
 md = render_markdown(d)
 check("Markdown 含分类与失败源", "## 新闻" in md and "❌ 源B" in md and "HTTP 403" in md)
 check("Markdown 转义了 script 原文", "<script>alert(1)</script>" in md)  # md 不执行，保留原文更利于排查
+
+print("\n[4b] Markdown 卫生（hallmark / remark-lint 约束）")
+# 这些断言锁住 render_markdown 的排版契约。仓库用 hallmark（remark-lint 风格指南）
+# 做 markdown CI，产物必须天生干净，而不是靠 CI 每次重写一遍。
+
+
+def _prose(text: str) -> str:
+    """去掉围栏代码块与行内代码，只留会被 remark 当排版解析的散文。"""
+    text = re.sub(r"```.*?```", "", text, flags=re.S)
+    return "".join(re.split(r"`[^`]*`", text))
+
+
+def _strip_emphasis(text: str) -> str:
+    """去掉成对的 _强调_。
+
+    hallmark 约定 emphasis 用 `_`，所以这些下划线是排版记号、是想要的；
+    要抓的是 q3_revenue / wait_for 这类标识符里散落的下划线。
+    """
+    return re.sub(r"(?<!\\)_[^_\n]+_(?!\\)", "", text)
+
+
+check("_md_url 给 http(s) 套自动链接尖括号", _md_url("https://a.example/x") == "<https://a.example/x>")
+check("_md_url 对非 URL 退回行内代码", _md_url("api.example/live") == "`api.example/live`")
+check("_md_url 空值安全", _md_url("") == "" and _md_url(None) == "")
+check("_md_text 转义散文里的下划线", _md_text("wait_for=4000") == "wait\\_for=4000", _md_text("wait_for=4000"))
+check("_md_text 转义方括号（否则被当成引用链接）", _md_text("[html]/[text]") == "\\[html\\]/\\[text\\]", _md_text("[html]/[text]"))
+check("_md_text 不动行内代码里的标识符",
+      _md_text("`q3_revenue` 与 q3_revenue") == "`q3_revenue` 与 q3\\_revenue",
+      _md_text("`q3_revenue` 与 q3_revenue"))
+
+prose = _strip_emphasis(_prose(md))
+check("渲染结果里没有裸 URL（remark-lint:no-literal-urls）",
+      all(md[m.start() - 1:m.start()] == "<" for m in re.finditer(r"https?://", md)),
+      str([md[m.start() - 12:m.start() + 20] for m in re.finditer(r"https?://", md)
+           if md[m.start() - 1:m.start()] != "<"][:2]))
+check("散文里没有未转义的下划线（no-undefined-references / emphasis-marker）",
+      not re.search(r"(?<!\\)_", prose),
+      str(re.findall(r".{0,18}(?<!\\)_.{0,18}", prose)[:3]))
+check("散文里没有未转义的方括号",
+      not re.search(r"(?<!\\)[\\[\\]]", prose),
+      str(re.findall(r".{0,18}(?<!\\)[\\[\\]].{0,18}", prose)[:3]))
+check("以且仅以一个换行结尾（remark-lint:final-newline）",
+      md.endswith("\n") and not md.endswith("\n\n"))
+
+_md_lines = md.splitlines()
+_bad_heading = [l for i, l in enumerate(_md_lines)
+                if l.startswith("###") and i + 1 < len(_md_lines) and _md_lines[i + 1].strip() != ""]
+check("每个 ### 标题后紧跟空行（否则 remark 会并掉相邻列表）",
+      not _bad_heading, str(_bad_heading[:2]))
+
+_i1 = next(i for i, l in enumerate(_md_lines) if l.startswith("1. "))
+_i10 = next(i for i, l in enumerate(_md_lines) if l.startswith("10. "))
+check("一位数序号下的嵌套项缩进 3 空格",
+      _md_lines[_i1 + 1].startswith("   - ") and not _md_lines[_i1 + 1].startswith("    - "),
+      repr(_md_lines[_i1 + 1][:8]))
+# `10. ` 的内容列在第 5 列；固定 3 空格会让子项被判成同级新列表，整片报 list-item-bullet-indent
+check("两位数序号下的嵌套项缩进 4 空格（跟随标记宽度）",
+      _md_lines[_i10 + 1].startswith("    - ") and not _md_lines[_i10 + 1].startswith("     - "),
+      repr(_md_lines[_i10 + 1][:8]))
+check("场景说明用 _ 强调而非 *（hallmark emphasis 约定）",
+      "_测试场景_" in md and "*测试场景*" not in md)
+check("页脚用 _ 强调而非 *",
+      "_由 Firecrawl 抓取并结构化提取，经 PushPlus 推送到微信。_" in md)
 
 for cap in (200000, 40000, 24000, 12000, 6000, 2500, 1200):
     out, truncated, dropped, per_source = clamp_html(d, cap)
